@@ -1,0 +1,6 @@
+#!/bin/sh
+CLASSPATH=src/main/clojure:`cat script/maven-classpath`
+
+java -server -Xmx2G -Xms2G -Xmn256m -XX:-PrintGCDetails -XX:+DisableExplicitGC -cp $CLASSPATH clojure.main
+
+
