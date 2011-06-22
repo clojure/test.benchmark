@@ -1,0 +1,4 @@
+#!/bin/sh
+CLASSPATH='target/*':src/main/clojure:`cat script/maven-classpath`
+
+java -server -XX:+AggressiveOpts -cp $CLASSPATH $@

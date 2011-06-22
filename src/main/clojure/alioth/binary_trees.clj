@@ -10,30 +10,22 @@
 ;   Alioth benchmarks: http://shootout.alioth.debian.org/u64q/benchmark.php?test=binarytrees&lang=all
 ;   Inspired by http://shootout.alioth.debian.org/u64q/program.php?test=binarytrees&lang=java&id=1
 ;           and http://shootout.alioth.debian.org/u64q/program.php?test=binarytrees&lang=clojure&id=5                                        ;
-(ns alioth.binary-trees)
+(ns alioth.binary-trees
+  (:gen-class))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
 
-(definterface ITreeNode
-  (^long item [])
-  (left [])
-  (right []))
+(def min-depth 4)
 
-(deftype TreeNode [left right ^long item]
-  ITreeNode
-  (^long item [this] item)
-  (left [this] left)
-  (right [this] right))
+(deftype TreeNode [left right ^int item])
 
 (defn make-tree [^long item ^long depth]
   (if (zero? depth)
     (TreeNode. nil nil item)
     (TreeNode.
-     (make-tree (dec (* 2 item))
-                     (dec depth))
-     (make-tree (* 2 item)
-                     (dec depth))
+     (make-tree (dec (* 2 item)) (dec depth))
+     (make-tree (* 2 item) (dec depth))
      item)))
 
 (defn item-check ^long [^TreeNode node]
@@ -57,8 +49,6 @@
                           (item-check (make-tree (- i) d)))
                        (inc i)))))))
 
-(def min-depth 4)
-
 (defn main [max-depth]
   (let [stretch-depth (inc max-depth)]
     (let [tree (make-tree 0 stretch-depth)
@@ -67,17 +57,14 @@
     (let [agents (repeatedly (.availableProcessors (Runtime/getRuntime)) #(agent []))
           long-lived-tree (make-tree 0 max-depth)]
       (loop [depth min-depth
-             [a & more] (cycle agents)]
-        (if (>= depth stretch-depth)
-          (do
-            (doseq [a agents] (await a))
-            (doseq [trees-nfo (if (= 1 (count agents))
-                                @(first agents)
-                                (apply interleave (map deref agents)))]
-              (println trees-nfo)))
-          (do
-            (send a (fn [coll] (conj coll (iterate-trees max-depth min-depth depth))))
-            (recur (+ 2 depth) more))))
+             [a & more] (cycle agents)
+             results []]
+        (if (> depth stretch-depth)
+          (doseq [r results] (println @r))
+          (let [result (promise)]
+            (send a (fn [_]
+                      (deliver result (iterate-trees max-depth min-depth depth))))
+            (recur (+ 2 depth) more (conj results result)))))
         (println (format "long lived tree of depth %d\t check: %d" max-depth (item-check long-lived-tree))))))
 
 (defn -main [& args]

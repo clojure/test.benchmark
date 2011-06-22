@@ -24,4 +24,20 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+	<groupId>com.theoryinpractise</groupId>
+	<artifactId>clojure-maven-plugin</artifactId>
+	<version>1.3.7</version>
+	<extensions>true</extensions>
+	<configuration>
+	  <warnOnReflection>${clojure.warnOnReflection}</warnOnReflection>
+	  <temporaryOutputDirectory>false</temporaryOutputDirectory>
+	</configuration>
+      </plugin>      
+    </plugins>
+  </build>
+  
+
 </project>
