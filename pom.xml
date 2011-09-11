@@ -22,6 +22,12 @@
       <artifactId>clojure</artifactId>
       <version>1.3.0-beta3</version>
     </dependency>
+    <dependency>
+      <groupId>swank-clojure</groupId>
+      <artifactId>swank-clojure</artifactId>
+      <version>1.4.0-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
