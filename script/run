@@ -1,3 +1,2 @@
 #!/bin/sh
-. $(dirname $0)/script_common
-${CMD_BASE} -m $@
+$(dirname $0)/java_run clojure.main -m $@
