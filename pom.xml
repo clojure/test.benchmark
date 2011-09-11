@@ -20,24 +20,40 @@
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.3.0-alpha8</version>
+      <version>1.3.0-beta3</version>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <plugin>
-	<groupId>com.theoryinpractise</groupId>
-	<artifactId>clojure-maven-plugin</artifactId>
-	<version>1.3.7</version>
-	<extensions>true</extensions>
-	<configuration>
-	  <warnOnReflection>${clojure.warnOnReflection}</warnOnReflection>
-	  <temporaryOutputDirectory>false</temporaryOutputDirectory>
-	</configuration>
-      </plugin>      
+        <groupId>com.theoryinpractise</groupId>
+        <artifactId>clojure-maven-plugin</artifactId>
+        <version>1.3.7</version>
+        <extensions>true</extensions>
+        <configuration>
+          <warnOnReflection>${clojure.warnOnReflection}</warnOnReflection>
+          <temporaryOutputDirectory>false</temporaryOutputDirectory>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.3</version>
+        <executions>
+          <execution>
+            <id>build-classpath</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>build-classpath</goal>
+            </goals>
+            <configuration>
+                <outputFile>${basedir}/script/maven-classpath</outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   
-
 </project>
