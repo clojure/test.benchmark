@@ -7,7 +7,7 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-;   Alioth benchmarks: http://shootout.alioth.debian.org/u64q/benchmark.php?test=binarytrees&lang=all
+;   Alioth benchmarks: http://shootout.alioth.debian.org/u64q/benchmark.php?test=fasta
 
 (ns alioth.fasta-redux
   (:import [java.io OutputStream]))
