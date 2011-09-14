@@ -10,8 +10,7 @@
 ;   Alioth benchmarks: http://shootout.alioth.debian.org/u64q/benchmark.php?test=mandelbrot
 ;   Partly inspired by: http://shootout.alioth.debian.org/u32/benchmark.php?test=mandelbrot&lang=java
 (ns alioth.mandelbrot 
-  (:import [alioth.java mandelbrot]
-           [java.io OutputStream BufferedOutputStream])
+  (:import [java.io OutputStream BufferedOutputStream])
   (:gen-class))
 
 (set! *warn-on-reflection* true)
@@ -36,9 +35,9 @@
 
   (generate [this]
     (let [yIdx (atom -1)
-          ^Runnable runner (reify Runnable
-                             (run [_] (let [y (swap! yIdx inc)]
-                                        (if (< y n) (do (.putLine this y) (recur))))))
+          runner (reify Runnable
+                   (run [_] (let [y (swap! yIdx inc)]
+                              (if (< y n) (do (.putLine this y) (recur))))))
           pool (map (fn [_] (Thread. runner)) (range (* 2 (.availableProcessors (Runtime/getRuntime)))))]
       (doseq [^Thread thread pool]
         (.start thread)) 

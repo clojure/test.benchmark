@@ -12,8 +12,7 @@
           [clojure.java.io :only [input-stream]]
           [clojure.test])
     (:import [java.io ByteArrayOutputStream
-                      ByteArrayInputStream]
-             [alioth.java mandelbrot]))
+                      ByteArrayInputStream]))
 
 (def ^:private master-files {8   "m8.bmp",
                              256 "m256.bmp"})
@@ -35,11 +34,7 @@
 
 
 (deftest test-mandelbrot-correctness
-  (let [java-mandelbrot #(mandelbrot/computeMandelbrot %)
-        java-write      #(mandelbrot/write %1 %2)]
-    (are [dimension mandelbrot-fn write-fn] (matches-master dimension mandelbrot-fn write-fn)
-         8 java-mandelbrot java-write
-         256 java-mandelbrot java-write
-         8 compute-mandelbrot write-bmp
-         256 compute-mandelbrot write-bmp
-         )))
+  (are [dimension mandelbrot-fn write-fn] (matches-master dimension mandelbrot-fn write-fn)
+       8 compute-mandelbrot write-bmp
+       256 compute-mandelbrot write-bmp
+       ))
