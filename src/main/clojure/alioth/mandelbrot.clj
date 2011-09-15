@@ -25,7 +25,7 @@
        (recur ~adv))))
 
 (deftype MandelbrotBuffer [^bytes out ^long n ^long m])
-(deftype CXB [^doubles crb ^doubles cib])
+(deftype CXB [^doubles crb ^doubles cib]) ; slightly faster than destructuring vector in inner loop 
 
 (defn ^CXB make-cxb [^long n]
   (let [n+7 (+ n 7)
@@ -86,7 +86,7 @@
       (.join thread))
     (MandelbrotBuffer. out n m)))
 
-(defn write-bmp [^MandelbrotBuffer buff ^OutputStream outStream]
+(defn write-bmp [^OutputStream outStream ^MandelbrotBuffer buff]
   (let [^bytes out (.out buff) n (.n buff) m (.m buff)
         len (* n m)] ; (.length out) <-- won't compile ??
     (.write outStream (.getBytes (str "P4\n" n " " n "\n"))) 

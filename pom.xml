@@ -55,6 +55,8 @@
             </goals>
             <configuration>
                 <outputFile>${basedir}/script/maven-classpath</outputFile>
+                <excludeArtifactIds>swank-clojure</excludeArtifactIds>
+                <excludeTransitive>true</excludeTransitive>
             </configuration>
           </execution>
         </executions>

@@ -25,12 +25,11 @@
   (input-stream (ns-resource this-ns file-name)))
 
 (defn- matches-master [dimension mandelbrot-fn write-fn]
-  (let [tmp (mandelbrot-fn dimension)]
-    (with-open [outStream (write-fn tmp
-                                    (ByteArrayOutputStream.))
-                inStream (ByteArrayInputStream. (.toByteArray outStream))
-                masterInStream (resource-stream (master-files dimension))]
-      (streams= inStream masterInStream))))
+  (with-open [outStream (write-fn (ByteArrayOutputStream.)
+                                  (mandelbrot-fn dimension))
+              inStream (ByteArrayInputStream. (.toByteArray outStream))
+              masterInStream (resource-stream (master-files dimension))]
+    (streams= inStream masterInStream)))
 
 
 (deftest test-mandelbrot-correctness
