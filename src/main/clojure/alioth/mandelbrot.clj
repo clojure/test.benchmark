@@ -25,9 +25,8 @@
        (recur ~adv))))
 
 (deftype MandelbrotBuffer [^bytes out ^long n ^long m])
-(deftype CXB [^doubles crb ^doubles cib]) ; slightly faster than destructuring vector in inner loop 
 
-(defn ^CXB make-cxb [^long n]
+(defn make-cxb [^long n]
   (let [n+7 (+ n 7)
         invN (/ 2.0 n)
         ^doubles crb (double-array n+7)
@@ -35,15 +34,13 @@
     (for-loop [(i 0) (< i n) (inc i)]
       (aset crb i (- (* i invN) 1.5))
       (aset cib i (- (* i invN) 1.0)))
-    (CXB. crb cib)))
+    [crb cib]))
 
-(defn get-byte ^long [^long x ^long y ^CXB cxb]
+(defn get-byte ^long [^long x ^long y ^doubles crb ^doubles cib]
   (loop [i 0 res 0]
     (if (< i 8)
       (recur (+ i 2) (+ (bit-shift-left res 2)
-                        (let [^doubles cib (.cib cxb)
-                              ^doubles crb (.crb cxb)
-                              ciby     (aget cib y)
+                        (let [ciby     (aget cib y)
                               crbx+i   (aget crb (+ x i))
                               crbx+i+1 (aget crb (+ x i 1))]
                           (long (loop [j 0
@@ -63,15 +60,16 @@
                                     b))))))
       (bit-xor res -1))))
 
-(defn put-line [^bytes out ^long m ^long y ^CXB cxb]
-  (let [offset (* y m)]
+(defn put-line [^bytes out ^long m ^long y cxb]
+  (let [[^doubles crb ^doubles cib] cxb
+        offset (* y m)]
     (for-loop [(xb 0) (< xb m) (inc xb)]
-      (aset out (+ offset xb) (byte (get-byte (* 8 xb) y cxb))))))
+      (aset out (+ offset xb) (byte (get-byte (* 8 xb) y crb cib))))))
 
 (defn ^MandelbrotBuffer compute-mandelbrot [^long n]
   (let [m (/ (+ n 7) 8)
         ^bytes out (byte-array (* n m))
-        ^CXB cxb (make-cxb n)
+        cxb (make-cxb n)
         yIdx (atom -1)
         runner (reify Runnable (run [_] (let [y (swap! yIdx inc)]
                                           (if (< y n)
