@@ -37,33 +37,30 @@
       (aset cib i (- (* i invN) 1.0)))
     (CXB. crb cib)))
 
-(defn get-byte-inner ^long [^long x ^long y ^long i ^CXB cxb]
-  (let [^doubles cib (.cib cxb)
-        ^doubles crb (.crb cxb)
-        ciby     (aget cib y)
-        crbx+i   (aget crb (+ x i))
-        crbx+i+1 (aget crb (+ x i 1))]
-    (loop [j 0
-           zr1 crbx+i   zi1 ciby
-           zr2 crbx+i+1 zi2 ciby 
-           b 0]
-      (if (< j MAX_ITERATIONS)
-        (let [nzr1 (+ crbx+i   (- (* zr1 zr1) (* zi1 zi1))) 
-              nzi1 (+ ciby (* zr1 zi1 2))
-              nzr2 (+ crbx+i+1 (- (* zr2 zr2) (* zi2 zi2)))
-              nzi2 (+ ciby (* zr2 zi2 2))
-              nb (if (> (+ (* nzr1 nzr1) (* nzi1 nzi1)) 4) (bit-or b 2) b)
-              nb (if (> (+ (* nzr2 nzr2) (* nzi2 nzi2)) 4) (bit-or nb 1) nb)]
-          (if (= nb 3)
-            nb
-            (recur (inc j) nzr1 nzi1 nzr2 nzi2 nb)))
-        b))))
-
 (defn get-byte ^long [^long x ^long y ^CXB cxb]
   (loop [i 0 res 0]
     (if (< i 8)
       (recur (+ i 2) (+ (bit-shift-left res 2)
-                        (get-byte-inner x y i cxb)))
+                        (let [^doubles cib (.cib cxb)
+                              ^doubles crb (.crb cxb)
+                              ciby     (aget cib y)
+                              crbx+i   (aget crb (+ x i))
+                              crbx+i+1 (aget crb (+ x i 1))]
+                          (long (loop [j 0
+                                       zr1 crbx+i   zi1 ciby
+                                       zr2 crbx+i+1 zi2 ciby 
+                                       b 0]
+                                  (if (< j MAX_ITERATIONS)
+                                    (let [nzr1 (+ crbx+i   (- (* zr1 zr1) (* zi1 zi1))) 
+                                          nzi1 (+ ciby (* zr1 zi1 2))
+                                          nzr2 (+ crbx+i+1 (- (* zr2 zr2) (* zi2 zi2)))
+                                          nzi2 (+ ciby (* zr2 zi2 2))
+                                          nb (if (> (+ (* nzr1 nzr1) (* nzi1 nzi1)) 4) (bit-or b 2) b)
+                                          nb (if (> (+ (* nzr2 nzr2) (* nzi2 nzi2)) 4) (bit-or nb 1) nb)]
+                                      (if (= nb 3)
+                                        nb
+                                        (recur (inc j) nzr1 nzi1 nzr2 nzi2 nb)))
+                                    b))))))
       (bit-xor res -1))))
 
 (defn put-line [^bytes out ^long m ^long y ^CXB cxb]
@@ -95,4 +92,4 @@
 (defn -main [& args]
   (let [n (if (first args) (Integer/parseInt (first args)) 16000)]
     (with-open [outStream (BufferedOutputStream. System/out)]
-      (write-bmp (compute-mandelbrot n) outStream))))
+      (write-bmp outStream (compute-mandelbrot n)))))
