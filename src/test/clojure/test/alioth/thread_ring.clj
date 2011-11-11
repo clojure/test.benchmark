@@ -11,8 +11,8 @@
         [clojure.test]))
 
 (deftest test-run-correctness
-  (are [agents iterations expected-output] (= expected-output (with-out-str (run agents iterations)))
-        5      100        "1\n" 
-        5      101        "2\n" 
-        503    5000       "474\n"
+  (are [agents iterations expected] (= expected (run agents iterations))
+        5      100        1
+        5      101        2  
+        503    5000       474 
        ))

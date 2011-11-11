@@ -9,35 +9,38 @@
 ;
 ;   Alioth benchmarks: http://shootout.alioth.debian.org/u64q/benchmark.php?test=threadring
 (ns alioth.thread-ring  
-  (:import [java.util.concurrent Semaphore])
+  (:import [java.util.concurrent Exchanger])
   (:gen-class))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
 
 (def ^:const AGENT_COUNT 503)
-(def ^Semaphore finished-lock (Semaphore. 0))
+(def ^Exchanger output-pipe (Exchanger.))
+
+(defn send* [^clojure.lang.Agent a f & args]
+  (.dispatch a f args false))
 
 (defn relay [state msg]
   (if (> msg 0)
-    (send (:next state) relay (dec msg))
-    (do (println (:id state))
-        (.release finished-lock)))
+    (send* (:next state) relay (dec msg))
+    (.exchange output-pipe (:id state)))
   state)
 
 (defn make-ring [n]
-  (let [head (agent {:id 1}) 
-        tail (reduce (fn [next idx] (agent {:id idx :next next}))
-                     head (range n 1 -1))]
-    (await (send head assoc :next tail))
+  (let [tail (agent {:id n}) 
+        head (reduce (fn [next id] (agent {:id id :next next}))
+                      tail 
+                      (range (dec n) 0 -1))]
+    (await (send tail assoc :next head))
     head))
 
 (defn run [agent-count iterations]
   (let [head (make-ring agent-count)]
     (send head relay iterations)
-    (.acquire finished-lock)))
+    (.exchange output-pipe nil)))
 
 (defn -main [& args]
   (let [iterations (if (first args) (Integer/parseInt (first args)) 50000)]
-    (run AGENT_COUNT iterations))
+    (println (run AGENT_COUNT iterations)))
     (shutdown-agents))
