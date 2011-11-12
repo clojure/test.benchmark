@@ -6,3 +6,6 @@ docs
 script/maven-classpath
 .lein*
 project.clj
+.project
+.settings
+.classpath
