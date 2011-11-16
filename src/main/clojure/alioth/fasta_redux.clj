@@ -117,20 +117,20 @@
         (let [oc (check-flush outbuf oc)
               ct (long (min line n))]
           (recur (- n ct)
-                 (loop [c oc]
-                   (if (< c (+ oc ct))
-                     (do
-                       (aset outbuf c
-                             (.c ^Freq (aget lookup
-                                             (loop [nr (lcg-next r)
-                                                    ai (long nr)]
-                                               (if (<  (.p ^Freq (aget lookup ai)) nr)
-                                                 (recur nr (inc ai))
-                                                 ai)))))
-                       (recur (inc c)))
-                     (do
-                       (aset outbuf c (byte 10))
-                       (inc c))))))
+                 (long (loop [c oc]
+                         (if (< c (+ oc ct))
+                           (do
+                             (aset outbuf c
+                                   (.c ^Freq (aget lookup
+                                                   (loop [nr (lcg-next r)
+                                                          ai (long nr)]
+                                                     (if (<  (.p ^Freq (aget lookup ai)) nr)
+                                                       (recur nr (inc ai))
+                                                       ai)))))
+                             (recur (inc c)))
+                           (do
+                             (aset outbuf c (byte 10))
+                             (inc c)))))))
         (.write System/out outbuf 0 oc)))))
 
 (defn -main [a & args]
