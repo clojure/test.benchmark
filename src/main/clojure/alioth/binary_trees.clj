@@ -16,7 +16,7 @@
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
 
-(def min-depth 4)
+(def ^:const min-depth 4)
 
 (deftype TreeNode [left right ^int item])
 
