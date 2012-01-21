@@ -22,6 +22,12 @@
        ~@body
        (recur ~adv))))
 
+(defmacro += [arr i expr]
+  `(aset ~arr ~i (+ (aget ~arr ~i) ~expr)))
+
+(defmacro -= [arr i expr]
+  `(aset ~arr ~i (- (aget ~arr ~i) ~expr)))
+
 (def ^:const pi 3.141592653589793)
 (def ^:const solar-mass (* 4 pi pi))
 (def ^:const days-per-year 365.24)
