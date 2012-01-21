@@ -3,7 +3,7 @@
 * JDK with java/javac on path - http://www.oracle.com/technetwork/java/javase/downloads/index.html
 * maven - http://maven.apache.org/guides/getting-started/index.html
 * add the following to your ~/.m2/settings.xml file
-```xml
+```
 <settings>
 	<activeProfiles>
         <activeProfile>clojure-dev</activeProfile>
@@ -40,7 +40,7 @@ mvn clojure:swank
 ```bash
 script/run alioth.thread-ring 1000
 ```
-### Contributing
+## Contributing
 There are a number of completed benchmarks, but there is a lot more left to do.
 Andy Fingerhut has a suit of benchmarks tailored for Clojure 1.2 and need updated or redone for Clojure 1.3 (https://github.com/jafingerhut/clojure-benchmarks).
 
