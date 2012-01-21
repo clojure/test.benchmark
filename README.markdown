@@ -1,31 +1,32 @@
+Benchmark (and regression) suite for Clojure Copyright (c) Rich Hickey.
+
+License and CA same as Clojure. See epl-v10.html at the root of the project for details.
 ## Getting Started
 ### Requirements
 * JDK with java/javac on path - http://www.oracle.com/technetwork/java/javase/downloads/index.html
 * maven - http://maven.apache.org/guides/getting-started/index.html
+
 ### Add the following to your ~/.m2/settings.xml file
-
-```text
-<settings>
-	<activeProfiles>
-        <activeProfile>clojure-dev</activeProfile>
-	</activeProfiles>
-
-	<profiles>
-        <profile>
-            <id>clojure-dev</id>
-			<activation> <activeByDefault>false</activeByDefault> </activation>
-            <repositories>
-              <repository>
-                <id>clojars</id>
-                <url>http://clojars.org/repo/</url>
-              </repository>
-            </repositories>
-        </profile>
+    <settings>
+    	<activeProfiles>
+            <activeProfile>clojure-dev</activeProfile>
+    	</activeProfiles>
+    
+    	<profiles>
+            <profile>
+                <id>clojure-dev</id>
+    			<activation> <activeByDefault>false</activeByDefault> </activation>
+                <repositories>
+                  <repository>
+                    <id>clojars</id>
+                    <url>http://clojars.org/repo/</url>
+                  </repository>
+                </repositories>
+            </profile>
+            ...
+        </profiles>
         ...
-    </profiles>
-    ...
-</settings>
-```
+    </settings>
 
 ### Building
 ```bash
