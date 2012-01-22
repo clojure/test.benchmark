@@ -51,7 +51,7 @@ There are a number of completed benchmarks, but there is a lot more left to do.
 Andy Fingerhut has a suit of benchmarks tailored for Clojure 1.2 and need updated or redone for Clojure 1.3 (https://github.com/jafingerhut/clojure-benchmarks).
 
 A good general approach is to examine the fastest alioth implementations, usually Java or C, and write a Clojure port.
-Idiomatic Clojure typically shows poorly in the benchmarks. Liberal use of primitive arrays, type hinting, and iteration apply.
+Fast small programs in any language are also worthy of examination. These benchmarks should demonstrate how to write idiomatic high-performance Clojure.
 
 Long term goal is a performance regression test suit ...
 
