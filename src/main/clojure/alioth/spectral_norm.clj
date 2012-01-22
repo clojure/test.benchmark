@@ -11,46 +11,39 @@
 ;   Inspired by http://shootout.alioth.debian.org/u64q/program.php?test=spectralnorm&lang=java&id=1
 
 (ns alioth.spectral-norm
-  (:import [java.text DecimalFormat NumberFormat])
+  (:import [java.text DecimalFormat])
   (:gen-class))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
 
-(defmacro for-loop [[binding pred adv] & body]
-  `(loop [~@binding]
-     (when ~pred
-       ~@body
-       (recur ~adv))))
-
 (defn a ^double [^long i ^long j]
   (/ 1.0 (+ (/ (* (+ i j) (+ i j 1)) 2.0) i 1)))
 
-(defn multiply-av [^long n ^doubles v ^doubles av]
-  (for-loop [(i 0) (< i n) (inc i)]
+(defn mul-av [^long n ^doubles v ^doubles av]
+  (dotimes [i n]
     (aset av i 0.0)
-    (for-loop [(j 0) (< j n) (inc j)]
+    (dotimes [j n]
       (aset av i (+ (aget av i) (* (a i j) (aget v j)))))))
 
-(defn multiply-atv [^long n ^doubles v ^doubles atv]
-  (for-loop [(i 0) (< i n) (inc i)]
+(defn mul-atv [^long n ^doubles v ^doubles atv]
+  (dotimes [i n]
     (aset atv i 0.0)
-    (for-loop [(j 0) (< j n) (inc j)]
+    (dotimes [j n]
       (aset atv i (+ (aget atv i) (* (a j i) (aget v j)))))))
 
-(defn multiply-atav [^long n ^doubles v ^doubles atav]
+(defn mul-atav [^long n ^doubles v ^doubles atav]
   (let [u (double-array n)]
-    (multiply-av n v u)
-    (multiply-atv n u atav)))
+    (mul-av n v u)
+    (mul-atv n u atav)))
 
 (defn approximate ^double [^long n]
   (let [u (double-array n)
         v (double-array n)]
-    (for-loop [(i 0) (< i n) (inc i)] (aset u i 1.0))
-    (for-loop [(i 0) (< i n) (inc i)] (aset v i 0.0))
-    (for-loop [(i 0) (< i 10) (inc i)]
-      (multiply-atav n u v)
-      (multiply-atav n v u))
+    (dotimes [i n] (aset u i 1.0) (aset v i 0.0))
+    (dotimes [i 10]
+      (mul-atav n u v)
+      (mul-atav n v u))
     (loop [i 0 vbv 0.0 vv 0.0]
       (if (< i n)
         (recur (inc i)
