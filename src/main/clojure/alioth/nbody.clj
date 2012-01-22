@@ -143,10 +143,11 @@
         (recur (inc i) (double e)))
       e)))
 
-(defn offset-momentum [^Body b ^double px ^double py ^double pz]
-  (setvx! b (/ (- px) solar-mass))
-  (setvy! b (/ (- py) solar-mass))
-  (setvz! b (/ (- pz) solar-mass)))
+(defn offset-momentum [^Body body ^double px ^double py ^double pz]
+  (doto body
+    (setvx! (/ (- px) solar-mass))
+    (setvy! (/ (- py) solar-mass))
+    (setvz! (/ (- pz) solar-mass))))
 
 (defn nbody-system []
   (let [bodies (object-array [(sun) (jupiter) (saturn) (uranus) (neptune)])]
