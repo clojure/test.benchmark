@@ -41,8 +41,8 @@
             [`(~(+=sym f) [~'this ~'n])
              `(~(-=sym f) [~'this ~'n])])
           (setters-impl [f]
-            [`(~(+=sym f) [~'_ ~'n] (~'set! ~f (+ ~f ~'n)))
-             `(~(-=sym f) [~'_ ~'n] (~'set! ~f (- ~f ~'n)))])]
+            [`(~(+=sym f) [~'_ ~'n] (~'set! ~f (+ ~f (~'double ~'n))))
+             `(~(-=sym f) [~'_ ~'n] (~'set! ~f (- ~f (~'double ~'n))))])]
     `(do
        (definterface ~'IBodyGet ~@(map getter fields))
        (defprotocol ~'IBodySet ~@(mapcat setters fields))
@@ -93,7 +93,64 @@
 (defn sun []
   (Body. 0.0 0.0 0.0 0.0 0.0 0.0 solar-mass))
 
+(defn advance [^objects bodies ^double dt ]
+  (dotimes [i (.length bodies)]
+    (let [^Body ibody (aget bodies i)]
+      (for-loop [(j (inc i)) (< j (.length bodies)) (inc j)]
+        (let [^Body jbody (aget bodies j)
+              dx (- (.x ibody) (.x jbody))
+              dy (- (.y ibody) (.y jbody))
+              cz (- (.z ibody) (.z jbody))
+              dsq (+ (* dx dx) (* dy dy) (* dz dz))
+              d (Math/sqrt dsq)
+              mag (/ dt (* dsq d))
+              imass (.mass ibody)
+              jmass (.mass jbody)]
+          (-=vx! (* dx jmass mag))
+          (-=vy! (* dy jmass mag))
+          (-=vz! (* dz jmass mag))
+          (+=vx! (* dx imass mag))
+          (+=vy! (* dy imass mag))
+          (+=vz! (* dz imass mag))))))
+  (dotimes [i (.length bodies)]
+    (let [^Body body (aget bodies i)]
+      (+=x! body (* dt (.vx body)))
+      (+=y! body (* dt (.vy body)))
+      (+=z! body (* dt (.vz body))))))
+
+(defn energy ^double [^objects bodies]
+  (loop [i 0 e 0.0]
+    (if (< i (.length bodies))
+      (let [^Body ibody (aget bodies i)
+            vx (.vx ibody)
+            vy (.vy ibody)
+            vz (.vz ibody)
+            e (+ e (* 0.5 (.mass ibody)
+                      (+ (* vx vx) (* vy vy) (* vz vz))))
+            e (loop [j (inc i) e e]
+                (if (< j (.length bodies))
+                  (let [^Body jbody (aget bodies j)
+                        dx (- (.x ibody) (.x jbody))
+                        dy (- (.y ibody) (.y jbody))
+                        dz (- (.z ibody) (.z jbody))
+                        d (Math/sqrt (+ (* dx dx) (* dy dy) (* dz dz)))]
+                    (recur (inc j) (- e (/ (* (.mass ibody) (.mass jbody)) d))))
+                  e))]
+        (recur (inc i) e))
+      e)))
+
+(defn offset-momentum [^Body b ^double px ^double py ^double pz]
+  (set-vx! b (/ (- px) solar-mass))
+  (set-vy! b (/ (- py) solar-mass))
+  (set-vz! b (/ (- pz) solar-mass)))
+
+(defn ^objects nbody-system []
+  (let [bodies (object-array [(sun) (jupiter) (saturn) (uranus) (neptune)])]
+    (dotimes [i (.length)])))
+
 (defn -main [& args]
-  (let [bodies (make-array Body 9)
+  (let [bodies (nbody-system)
         n (if-let [n (first args)] (Integer/parseInt n) 500000)]
-    (format "%.9f\n" ())))
+    (println (format "%.9f\n" (energy bodies)))
+    (dotimes [i n] (advance bodies 0.01))
+    (println (format "%.9f\n" (energy bodies)))))
