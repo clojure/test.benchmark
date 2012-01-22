@@ -22,25 +22,39 @@
        ~@body
        (recur ~adv))))
 
-(defmacro += [arr i expr]
-  `(aset ~arr ~i (+ (aget ~arr ~i) ~expr)))
-
-(defmacro -= [arr i expr]
-  `(aset ~arr ~i (- (aget ~arr ~i) ~expr)))
-
 (def ^:const pi 3.141592653589793)
 (def ^:const solar-mass (* 4 pi pi))
 (def ^:const days-per-year 365.24)
 
-(deftype Body [^{:unsynchronized-mutable true :tag double} x
-               ^{:unsynchronized-mutable true :tag double} y
-               ^{:unsynchronized-mutable true :tag double} z
-               ^{:unsynchronized-mutable true :tag double} vx
-               ^{:unsynchronized-mutable true :tag double} vy
-               ^{:unsynchronized-mutable true :tag double} vz
-               ^{:unsynchronized-mutable true :tag double} mass])
+(defmacro defbody [& fields]
+  (letfn [(getsym [f] (symbol (str "get" f)))
+          (+=sym [f] (symbol (str "+=" f "!")))
+          (-=sym [f] (symbol (str "-=" f "!")))
+          (tag [f]
+            (with-meta f
+              {:unsynchronized-mutable true :tag 'double}))
+          (getter [f]
+            `(~(with-meta (getsym f) {:tag 'double}) []))
+          (getter-impl [f]
+            `(~(getsym f) [~'this] ~f))
+          (setters [f]
+            [`(~(+=sym f) [~'this ~'n])
+             `(~(-=sym f) [~'this ~'n])])
+          (setters-impl [f]
+            [`(~(+=sym f) [~'_ ~'n] (~'set! ~f (+ ~f ~'n)))
+             `(~(-=sym f) [~'_ ~'n] (~'set! ~f (- ~f ~'n)))])]
+    `(do
+       (definterface ~'IBodyGet ~@(map getter fields))
+       (defprotocol ~'IBodySet ~@(mapcat setters fields))
+       (deftype ~'Body [~@(map tag fields)]
+         ~'IBodyGet
+         ~@(map getter-impl fields)
+         ~'IBodySet
+         ~@(mapcat setters-impl fields)))))
 
-(defn jupiter []
+(defbody x y z vx vy vz mass)
+
+(defn ^Body jupiter []
   (Body. 4.84143144246472090
          -1.16032004402742839
          -1.03622044471123109e-01
@@ -49,7 +63,7 @@
          (* -6.90460016972063023e-05 days-per-year)
          (* 9.54791938424326609e-04 solar-mass)))
 
-(defn saturn []
+(defn ^Body saturn []
   (Body. 8.34336671824457987
          4.12479856412430479
          -4.03523417114321381e-01
@@ -58,7 +72,7 @@
          (* 2.30417297573763929e-05 days-per-year)
          (* 2.85885980666130812e-04 solar-mass)))
 
-(defn uranus []
+(defn ^Body uranus []
   (Body. 1.28943695621391310e+01
          -1.51111514016986312e+01
          -2.23307578892655734e-01
@@ -67,7 +81,7 @@
          (* -2.96589568540237556e-05 days-per-year)
          (* 4.36624404335156298e-05 solar-mass)))
 
-(defn neptune []
+(defn ^Body neptune []
   (Body. 1.53796971148509165e+01
          -2.59193146099879641e+01
          1.79258772950371181e-01
@@ -77,7 +91,7 @@
          (* 5.15138902046611451e-05 solar-mass)))
 
 (defn sun []
-  (Body. nil nil nil nil nil nil solar-mass))
+  (Body. 0.0 0.0 0.0 0.0 0.0 0.0 solar-mass))
 
 (defn -main [& args]
   (let [bodies (make-array Body 9)
