@@ -9,3 +9,5 @@ project.clj
 .project
 .settings
 .classpath
+*.#*
+*#*
