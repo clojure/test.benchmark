@@ -11,7 +11,6 @@
         [alioth.util.core]
         [clojure.java.io :only [input-stream]]
         [clojure.test])
-  (:import [java.nio ByteBuffer])
   (:import [java.io InputStream
                     ByteArrayOutputStream
                     ByteArrayInputStream
