@@ -18,6 +18,14 @@
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
 
+(def ^:const object-array-t "[Ljava.lang.Object;")
+
+(defmacro for-loop [[binding pred adv] & body]
+  `(loop [~@binding]
+     (when ~pred
+       ~@body
+       (recur ~adv))))
+
 (definterface LengthSetable
   (^void setLength [^long l]))
 
@@ -42,6 +50,7 @@
             ["V", "(a|c|g)"]
             ["W", "(a|t)"]
             ["Y", "(c|t)"]])
+(def acodes (into-array (map into-array codes)))
 (def longest (long (reduce #(max %1 (count (second %2))) 0 codes)))
 
 (def _strs ["agggtaaa|tttaccct"
@@ -54,8 +63,8 @@
             "agggta[cgt]a|t[acg]taccct"
             "agggtaa[cgt]|[acg]ttaccct"
             ])
-(def ^"[Ljava.lang.Object;" strs (into-array _strs))
-(def ^"[Ljava.lang.Object;" pats (into-array (map #(Pattern/compile %) _strs)))
+(def ^object-array-t strs (into-array _strs))
+(def ^object-array-t pats (into-array (map #(Pattern/compile %) _strs)))
 
 (def repl
   (let [buf (byte-array (* 26 (inc longest)))]
@@ -86,12 +95,10 @@
                             tail))))))))
 
 (defn count-patterns [^ByteWrapper t]
-  (loop [i 0]
-    (when (< i (count pats))
-      (let [m (.matcher ^Pattern (aget pats i) t)
-            c (loop [c 0] (if (.find m) (recur (inc c)) c))]
-        (println (aget strs i) c))
-      (recur (inc i)))))
+  (for-loop [(i 0) (< i (count pats)) (inc i)]
+            (let [m (.matcher ^Pattern (aget pats i) t)
+                  c (loop [c 0] (if (.find m) (recur (inc c)) c))]
+              (println (aget strs i) c))))
 
 (defn replace-in ^ByteWrapper [^ByteWrapper t]
   (let [^bytes backing (.backing t)
@@ -120,14 +127,16 @@
 (defn regexdna [^bytes ba]
   (let [t (ByteWrapper. ba (count ba))]
     (rm-comments t)
-    (count-patterns t)
-    (println)
-    (println (count (.backing t)))
-    (println (.length t))
-    (println (.length (replace-in t)))))
+    (let [w (future (replace-in t))] 
+      (count-patterns t)
+      (println)
+      (println (count (.backing t)))
+      (println (.length t))
+      (println (.length ^ByteWrapper @w)))))
 
 (defn -main [& args]
   (let [cin (-> FileDescriptor/in FileInputStream. .getChannel)
         bb (-> cin .size int ByteBuffer/allocate)]
     (.read cin bb)
-    (regexdna (.array bb))))
+    (regexdna (.array bb)))
+  (shutdown-agents))
