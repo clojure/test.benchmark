@@ -1,0 +1,11 @@
+#!/bin/bash
+
+RUNNER=$(dirname $0)/run
+FASTA_SIZE=${1:-5000000}
+FASTA_TMP_FILE="/tmp/fasta${FASTA_SIZE}.out"
+
+if [ ! -f "${FASTA_TMP_FILE}" ]; then
+   ${RUNNER} alioth.fasta-redux ${FASTA_SIZE} > ${FASTA_TMP_FILE}
+fi
+
+time ${RUNNER} alioth.regexdna < ${FASTA_TMP_FILE}
