@@ -4,4 +4,4 @@ TARGET_CLASSPATH=`ls -d ${BASE_DIR}/target/*class* | tr '\n' :`
 MAVEN_CLASSPATH=`cat ${BASE_DIR}/script/maven-classpath`
 CLASSPATH=${TARGET_CLASSPATH}${BASE_DIR}/src/main/clojure:${MAVEN_CLASSPATH}
 
-java -server -XX:+AggressiveOpts -cp "${CLASSPATH}" $@
+java -server -XX:+AggressiveOpts -XX:+TieredCompilation -cp "${CLASSPATH}" $@
