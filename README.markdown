@@ -49,6 +49,7 @@ script/run alioth.thread-ring 1000
 ### Running a baseline test
 Baseline tests execute a java-equivalent benchmark and compare execution times to the respective clojure benchmarks.
 The specifications for the baseline tests are in https://github.com/clojure/test.benchmark/blob/master/src/baseline/clojure/baseline/spec.clj
+
 ```bash
 # this will pull down the non-CA repo into src/baseline and build
 mvn compile -Pbaseline
@@ -64,6 +65,7 @@ script/run baseline.exec 10
 # run mandelbrot and thread-ring baseline tests once and report
 script/run baseline.exec 1 mandelbrot thread-ring
 ```
+
 TODO: hook baseline test execution into maven test cycle and generate a jenkins-consumable report
 
 ## Contributing
