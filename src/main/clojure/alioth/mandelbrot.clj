@@ -82,12 +82,16 @@
     (MandelbrotBuffer. out n m)))
 
 (defn write-bmp [^OutputStream outStream ^MandelbrotBuffer buff]
-  (let [^bytes out (.out buff) n (.n buff) m (.m buff) len (* n m)] ; (.length out) <-- won't compile ??
+  (let [^bytes out (.out buff) n (.n buff) m (.m buff) len (* n m)] ;; (.length out) <-- won't compile ??
     (.write outStream (.getBytes (str "P4\n" n " " n "\n"))) 
-    (.write outStream out 0 len) ; puzzling bug, just (.write outStream out) prints garbage
+    (.write outStream out 0 len) ;; puzzling bug, just (.write outStream out) prints garbage
     outStream))
 
+(defn run [^long n]
+  (with-open [outStream (BufferedOutputStream. System/out)]
+    (write-bmp outStream (compute-mandelbrot n))))
+
 (defn -main [& args]
-  (let [n (if (first args) (Integer/parseInt (first args)) 16000)]
-    (with-open [outStream (BufferedOutputStream. System/out)]
-      (write-bmp outStream (compute-mandelbrot n)))))
+  (run (if (first args)
+         (Integer/parseInt (first args))
+         16000)))

@@ -11,3 +11,4 @@ project.clj
 .classpath
 *.#*
 *#*
+src/baseline/java

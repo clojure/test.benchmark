@@ -1,0 +1,15 @@
+#! /bin/sh
+
+BASE_DIR=$(dirname $0)/..
+LOCAL_REPO_DIR=${BASE_DIR}/src/baseline/java
+
+NONCA_REPO_URL='https://github.com/pmbauer/test.benchmark.nonca'
+
+
+if [ -d "${LOCAL_REPO_DIR}" ]; then
+    cd ${LOCAL_REPO_DIR}
+    git pull
+else
+    cd ${LOCAL_REPO_DIR}/..
+    git clone ${NONCA_REPO_URL} java
+fi

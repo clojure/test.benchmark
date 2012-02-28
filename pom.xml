@@ -25,17 +25,106 @@
     </dependency>
   </dependencies>
 
+  <profiles>
+    <profile>
+      <id>baseline</id>
+      <properties>
+        <baseline.sources>src/baseline</baseline.sources>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <executions>
+              <execution>
+                <id>pull-nonca-sources</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <executable>script/pull_nonca</executable>
+            </configuration>
+          </plugin>
+          <plugin>
+            <!-- Include baseline sources -->
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>add-clojure-source-dirs</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                  <goal>add-resource</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>${clojure.source.dir}</source>
+                    <source>${baseline.sources}/clojure</source>
+                    <source>${baseline.sources}/java</source>
+                  </sources>
+                  <resources>
+                    <resource>
+                      <directory>${clojure.source.dir}</directory>
+                    </resource>
+                    <resource>
+                      <directory>${baseline.sources}/clojure</directory>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>com.theoryinpractise</groupId>
+            <artifactId>clojure-maven-plugin</artifactId>
+            <version>1.3.9</version>
+            <extensions>true</extensions>
+            <configuration>
+              <sourceDirectories>
+                <sourceDirectory>src/main/clojure</sourceDirectory>
+                <sourceDirectory>src/baseline/clojure</sourceDirectory>
+              </sourceDirectories>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
   <build>
     <plugins>
       <plugin>
         <groupId>com.theoryinpractise</groupId>
         <artifactId>clojure-maven-plugin</artifactId>
-        <version>1.3.8</version>
+        <version>1.3.9</version>
         <extensions>true</extensions>
         <configuration>
           <warnOnReflection>${clojure.warnOnReflection}</warnOnReflection>
           <temporaryOutputDirectory>false</temporaryOutputDirectory>
         </configuration>
+        <executions>
+          <execution>
+            <id>clojure-compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>clojure-test</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

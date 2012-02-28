@@ -35,8 +35,8 @@
     (await (send tail assoc :next head))
     head))
 
-(defn run [agent-count iterations]
-  (let [head (make-ring agent-count)]
+(defn run [agents iterations]
+  (let [head (make-ring agents)]
     (send head relay iterations)
     (.exchange output-pipe nil)))
 
