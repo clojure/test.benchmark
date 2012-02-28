@@ -64,6 +64,16 @@ script/run baseline.exec 10
 
 # run mandelbrot and thread-ring baseline tests once and report
 script/run baseline.exec 1 mandelbrot thread-ring
+({:failures :none,
+  :id "mandelbrot",
+  :metrics {:runtime {:baseline 9451.773698, :target 10316.261803}},
+  :tollerances {:runtime 0.25},
+  :sample-size 1}
+ {:failures :none,
+  :id "thread-ring",
+  :metrics {:runtime {:baseline 4308.804918, :target 309.521524}},
+  :tollerances {:runtime -9.0},
+  :sample-size 1})
 ```
 
 TODO: hook baseline test execution into maven test cycle and generate a jenkins-consumable report
