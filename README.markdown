@@ -52,6 +52,7 @@ The specifications for the baseline tests are in https://github.com/clojure/test
 
 ```bash
 # this will pull down the non-CA repo into src/baseline and build
+# Currently some Java programs require JDK 1.7 for Fork/Join library.
 mvn compile -Pbaseline
 
 # afterwards you can execute baseline tests as follows
