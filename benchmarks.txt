@@ -1,0 +1,56 @@
+Some tips for making benchmark game programs:
+
+Objectives
+----------
+
+The objective is to get within ~25% of the Java entry for the same program. 64-bit (the future) more important than 32-bit (the past).
+
+We are trying to avoid any entries where we get characterized as 2x or 3x Java (or worse!).
+
+Code should be clean Clojure code, with optimization only where useful (e.g. inner loops)
+
+Approach
+--------
+
+Read and understand the Java version. Be aware that some of the Java entries are overoptimized for no substantial benefit.
+
+Build and run the Java version on your machine and get baseline numbers and sample output.
+
+Make a first pass at the same algorithm, using Clojure relatively idiomatically. Set both *warn-on-reflection* and *unchecked-math* to true at top of file.
+
+Do not use leiningen for any purpose during this exercise.
+
+Build and time that to get baseline numbers. That means running from the command line on AOTed code, not REPL. Use the same JVM flags as the Java version. Use the latest Clojure release (1.5.1)
+
+Verify the output is correct, and same as the Java version.
+
+Find out where the most time is being spent. Most likely will be the innermost loop(s). How to verify? I recommend commenting out or neutering the suspect code (e.g. replacing the expression with a constant). Then rebuild and re-time. If the thing you neutered doesn't take a significant portion of the time, move on, there's no point optimizing that now.
+
+Once you have identified problem area(s), work slowly and methodically to try improvements. 
+
+The first thing is to leverage any algorithmic improvements present in the Java version (in the problem area). Only then any micro-optimizations.
+
+Any time you try an improvement, get a baseline time first, make a single change, time that. 
+
+***Most important, if there is no improvement, revert the change immediately. The worst possible outcome is a file full of ineffective optimization attempts, obscuring the code and serving to communicate nothing to those who attempt to follow your optimization strategy or techniques.***
+
+If it is faster, verify that the output is still correct.
+
+Continue to work on the biggest unoptimized area at any time.
+
+When you are close enough, stop!
+
+Tips
+----
+
+Keep it simple!
+
+*unchecked-math* will make ordinary ops as fast as possible, no need for unchecked-xxx nor casts etc. Use type hints to get unboxed arguments and loop locals. If you have lots of casts you are doing it wrong. Only use -int ops when the algorithm requires 32-bit wrapping/overflow.
+
+deftype is your friend. definterface can be too, when primitive args are required.
+
+Remember Clojure has a longer startup time than Java, almost 0.9 seconds on my laptop. You can get your time by timing 'java ... clojure.main -e nil'. Thus on a 5 second benchmark you can never get closer than 20%, so don't bother trying.
+
+Don't use techniques you don't understand.
+
+Leave the setup and other one-time code alone, unless it is shown to dominate the running time. This way we can still have clear and clean Clojure code in the majority. It's not worth losing this for a 1% speedup.
