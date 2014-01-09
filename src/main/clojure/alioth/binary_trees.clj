@@ -10,7 +10,7 @@
 ;; modified promise/delivery improvement by Stuart Halloway
 ;; small hints by David Nolen and Alex Miller
                                         ;
-(ns alioth.binary-trees-me
+(ns alioth.binary-trees
   (:gen-class))
 
 (set! *warn-on-reflection* true)

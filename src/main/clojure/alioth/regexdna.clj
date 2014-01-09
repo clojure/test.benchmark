@@ -10,7 +10,7 @@
 ;   Alioth benchmarks:
 ;   http://shootout.alioth.debian.org/u64q/benchmark.php?test=regexdna
 
-(ns alioth.regexme
+(ns alioth.regexdna
   (:import [java.io FileInputStream FileDescriptor]
            [java.nio ByteBuffer]
            [java.util.regex Pattern])
