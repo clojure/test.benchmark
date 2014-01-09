@@ -1,0 +1,134 @@
+time java -server -agentpath:/Applications/YourKit_Java_Profiler_12.0.6.app/bin/mac/libyjpagent.jnilib=onexit=snapshot,dir=/Users/alex/snapshots,tracing -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts -Xmx512m alioth.regexnow 0 < ~/Relevance/clojure/alioth/benchmarksgame-2013-10-24/benchmarksgame/website/websites/download/regexdna-input.txt
+
+java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts -Xmx512m alioth.fasta 250000 > fastaout
+
+
+correct output:
+agggtaaa|tttaccct 178
+[cgt]gggtaaa|tttaccc[acg] 624
+a[act]ggtaaa|tttacc[agt]t 2120
+ag[act]gtaaa|tttac[agt]ct 1444
+agg[act]taaa|ttta[agt]cct 2723
+aggg[acg]aaa|ttt[cgt]ccct 767
+agggt[cgt]aa|tt[acg]accct 713
+agggta[cgt]a|t[acg]taccct 805
+agggtaa[cgt]|[acg]ttaccct 1086
+
+25416745
+25000000
+33399408
+
+real - wall time
+user - cpu time in user-mode
+sys - cpu time in kernel
+user+sys = total cpu time
+
+----- java results
+
+$ time java -server -cp src/baseline/java -XX:+TieredCompilation -XX:+AggressiveOpts alioth.java.regexdna 0 < fastaout2.5m
+
+real	0m2.547s
+user	0m7.048s
+sys	0m0.195s
+
+----- current clojure results
+
+$ time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.regexnow 0 < fastaout2.5m
+
+real	0m3.007s
+user	0m8.426s
+sys	0m0.228s
+
+----- my clojure results
+
+$ time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.regexme 0 < fastaout2.5m
+
+.1 - using 1 thread per variant (same as java 7 program)
+real	0m3.780s
+user	0m8.335s
+sys	0m0.272s
+
+.2 - using executor thread pool
+real	0m3.806s
+user	0m8.357s
+sys	0m0.269s
+
+.3 - .1 + use re-seq ala regexnow
+real	0m3.492s
+user	0m8.403s
+sys	0m0.279s
+
+.4 - regexnow + const maps
+real	0m3.056s
+user	0m8.617s
+sys	0m0.226s
+
+.5 - literal translation of Java code
+real	0m3.372s
+user	0m8.660s
+sys	0m0.251s
+
+.6 - .5 + buflen in background thread
+real	0m2.977s
+user	0m8.614s
+sys	0m0.228s
+
+.7 - .6 + faster reading from regexnow
+real	0m2.910s
+user	0m8.184s
+sys	0m0.240s
+
+.8 - .7 + PersistentArrayMap for replacements, construct Thread instance instead of proxy
+real	0m3.010s
+user	0m8.355s
+sys	0m0.227s
+
+.9 - .8 + use future-call to clean up background thread calculating buflen
+real	0m2.970s
+user	0m8.298s
+sys	0m0.235s
+
+.10 - .9 + use primitive in inc loop
+real	0m3.096s
+user	0m8.455s
+sys	0m0.237s
+
+.11 - .10 + remove all the thread gunk and use pmap over variants instead
+not as fast but way nicer looking
+real	0m2.990s
+user	0m8.336s
+sys	0m0.242s
+
+.12 - .11 + mutable int in hot loop - doesn't look any faster (rollback!)
+real	0m3.000s
+user	0m14.248s
+sys	0m0.257s
+
+.13 - .11 + use map and future-call instead of pmap
+real	0m3.035s
+user	0m8.574s
+sys	0m0.231s
+
+.14 - .11 + remove unused imports
+real	0m3.008s
+user	0m8.373s
+sys	0m0.223s
+
+### pause to test with fastaout5m
+  java:
+  real	0m4.820s
+  user	0m13.657s
+  sys	0m0.374s 
+  
+  regexnow:
+  real	0m5.106s
+  user	0m15.358s
+  sys	0m0.364s
+
+  regexme.14:
+  real	0m4.937s
+  user	0m15.088s
+  sys	0m0.327s
+### end 
+
+SUBMITTED regexme.14.

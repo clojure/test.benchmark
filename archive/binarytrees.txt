@@ -1,0 +1,130 @@
+------------------------------------------------------------------------------------------------
+**CURRENT BEST JAVA**
+javac src/baseline/java/alioth/java/binarytrees.java
+time java -server -cp src/baseline/java -XX:+TieredCompilation -XX:+AggressiveOpts alioth.java.binarytrees 20
+
+real	0m3.218s
+user	0m8.967s
+sys	0m0.354s
+
+--------------------
+**CURRENT BEST CLOJURE**
+
+time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.binary_trees_site 20
+
+real	0m6.617s
+user	0m41.093s
+sys	0m0.883s
+
+--------------------
+binary_trees_site with pmap:
+
+real	0m5.845s
+user	0m36.770s
+sys	0m0.888s
+
+;; better, but not as good as binary_trees below
+
+--------------------
+.1 
+
+time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.binary_trees 20
+
+real	0m5.350s
+user	0m28.982s
+sys	0m1.056s
+
+2 major differences
+1) use agents and promises to spread work
+2) iterate-trees written as loop, not reduce
+
+--------------------
+binary_trees with iterate_trees from _site version
+
+real	0m5.633s
+user	0m31.139s
+sys	0m1.020s
+
+  	slower -> switch back
+
+--------------------
+.2 - fix logic in item-check and use unchecked-add/subtract
+
+real	0m4.645s
+user	0m24.498s
+sys	0m0.983s
+
+--------------------
+.3 - more refactoring and hacks in make-tree
+
+real	0m4.626s
+user	0m24.611s
+sys	0m1.133s
+
+--------------------
+.4 - .1 + fix error in item-check only
+
+real	0m5.434s
+user	0m27.805s
+sys	0m1.067s
+
+--------------------
+
+* .5 - .4 + change TreeNode item type to long
+
+real	0m4.550s
+user	0m24.369s
+sys	0m1.066s
+
+--------------------
+.6 - .5 + add ^long hints in iterate-trees
+
+real	0m4.574s
+user	0m24.340s
+sys	0m0.972s
+
+no improvement, so revert
+--------------------
+.7 - pull repeated computations out in make-tree 
+
+ls -l target/classes/alioth/binary_trees_me*
+javap -c -classpath target/classes alioth.binary_trees_me\$make_tree
+
+verified long math in make-tree and item-check
+
+real	0m4.679s
+user	0m24.527s
+sys	0m0.929s
+
+no real difference, don't keep
+
+--------------------
+.8 - .7 + type hints in iterate-trees
+
+looking over iterate-trees bytecode, seeing that the closed over function inside format 
+is passing d as a boxed object not as a long (iterations is a long).
+
+Added ^long type hints to all params to iterate-trees. Now seeing closed over field as a long.
+Seems promising.
+
+real	0m4.591s
+user	0m24.290s
+sys	0m0.913s
+
+--------------------
+.9 - .8 + extract inner loop from iterate-trees into function
+
+- seems worse, falling back to .8
+
+real	0m4.737s
+user	0m25.064s
+sys	0m0.942s
+
+--------------------
+.10 - .8 + added long hints in a couple more places
+
+real	0m4.586s
+user	0m23.791s
+sys	0m0.941s
+
+SUBMITTED: .10 version
