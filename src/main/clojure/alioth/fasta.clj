@@ -59,7 +59,7 @@
         (set! rand-state next-state)
         (* max-val next-state ONE_OVER_IM))))
 
-(defn fill-random! [^bytes gene-bytes ^doubles gene-cdf n ^bytes buf ^fasta.PRNG my-prng]
+(defn fill-random! [^bytes gene-bytes ^doubles gene-cdf n ^bytes buf ^alioth.fasta.PRNG my-prng]
   (let [n ^long n]
     (loop [i 0]
       (when (< i n)
