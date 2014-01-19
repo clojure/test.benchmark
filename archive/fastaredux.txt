@@ -1,0 +1,102 @@
+fasta-redux
+
+--------------------
+*CURRENT BEST JAVA*
+javac src/baseline/java/alioth/java/fastaredux.java
+time java -server -cp src/baseline/java -XX:+TieredCompilation -XX:+AggressiveOpts alioth.java.fastaredux 25000000 > /dev/null
+
+real	0m1.195s
+user	0m1.200s
+sys	0m0.025s
+
+--------------------
+*CURRENT BEST CLOJURE*
+(on site)
+
+time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.fasta_redux_site 25000000 > /dev/null
+
+real	0m4.767s
+user	0m5.625s
+sys	0m0.341s
+
+--------------------
+current version in repo
+
+time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.fasta_redux 25000000 > /dev/null
+
+real	0m4.241s
+user	0m4.988s
+sys	0m0.329s
+
+--------------------
+.1 - comment out writes to hide time to log for now
+
+timed three main calls:
+ONE (repeat-fasta) = 6.798 msecs
+TWO (random-fasta) = 1319.122 msecs
+THREE (random-fasta) = 1824.821 msecs
+
+random-fasta consists of three nested loops with a large number of iterations
+ls -l target/classes/alioth/fasta_redux*
+javap -c -classpath target/classes alioth.fasta_redux\$random_fasta\$fn__411\$fn__412
+
+--------------------
+.2 - switch defrecord to a deftype 
+
+real	0m4.087s
+user	0m4.805s
+sys	0m0.319s
+
+just doing field access. could potentially make p field mutable and reuse 
+instances in sum-and-scale, but nothing I've seen indicates that's 
+likely to be the current bottleneck.
+
+--------------------
+.3 - .2 + use alength for array counting
+
+real	0m3.811s
+user	0m4.495s
+sys	0m0.310s
+
+--------------------
+.4 - .3 + add long hint on middle loop of random-fasta
+
+real	0m3.637s
+user	0m4.321s
+sys	0m0.293s
+
+--------------------
+.5 - switch back to site version
+remove all hints and unchecked stuff, replace int- with long-
+
+real	0m2.530s
+user	0m3.328s
+sys	0m0.106s
+
+--------------------
+.6 - .5 + combine fasta-repeat and cycle-bytes
+
+real	0m2.475s
+user	0m3.202s
+sys	0m0.106s
+
+--------------------
+.7 - .6 + changes to make-lookup-table and find-index
+
+real	0m2.470s
+user	0m3.239s
+sys	0m0.103s
+
+--------------------
+.8 - .7 + use double array for cumulative probabilities and find-index
+
+real	0m2.423s
+user	0m3.141s
+sys	0m0.096s
+
+--------------------
+.9 - .8 + removed some casts in fasta-random that aren't helping at all
+
+real	0m2.438s
+user	0m3.145s
+sys	0m0.094s

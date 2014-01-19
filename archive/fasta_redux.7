@@ -4,8 +4,6 @@
 ;; contributed by Bill James
 ;; speed improvements by Andy Fingerhut
 ;; ported to Clojure 1.3 by Marko Kocic
-;; updated for Clojure 1.5 by Alex Miller
-;;  removed most casts and ints, add *unchecked-math*
 
 (ns alioth.fasta-redux
   (:gen-class))
@@ -39,11 +37,12 @@
 (def homosapiens [0.3029549426680 0.1979883004921
                   0.1975473066391 0.3015094502008])
 
-(defn find-index ^long [^double t ^doubles coll]
-  (loop [i 0]
-    (if (<= t (aget coll i))
+(defn find-index ^long [^double t coll]
+  (loop [i 0
+         s (seq coll)]
+    (if (<= t (first s))
       i
-      (recur (inc i)))))
+      (recur (inc i) (rest s)))))
 
 (def random-seed (long-array [42]))
 (defn gen-random-fast []
@@ -53,12 +52,11 @@
     (* new-seed LCG_SCALE)))
 
 ;; Takes a vector of probabilities.
-(defn make-cumulative
-  ^doubles [v]
-  (double-array (map #(reduce + (subvec v 0 %)) (range 1 (inc (count v))))))
+(defn make-cumulative [v]
+  (vec (map #(reduce + (subvec v 0 %)) (range 1 (inc (count v))))))
 
-;; Takes a double array of cumulative probabilities.
-(defn make-lookup-table [^doubles v]
+;; Takes a vector of cumulative probabilities.
+(defn make-lookup-table [v]
   (let [^longs a (long-array LOOKUP_SIZE)]
     (loop [i 0]
       (if (< i LOOKUP_SIZE)
@@ -87,7 +85,8 @@
                (- n LINE_LENGTH))
         (do
           (aset buffer (+ j n) (byte 10))
-          (.write ostream buffer 0 (+ j n 1)))))))
+          (.write ostream buffer 0 (+ j n 1))
+          )))))
 
 (defn fasta-random [probs ^long n ^java.io.BufferedOutputStream ostream]
   (let [codes (.getBytes (str codes))
@@ -97,17 +96,18 @@
         buf-size (* LINES_IN_BUFFER (inc LINE_LENGTH))
         buffer (byte-array buf-size)
         b10 (byte 10)]
-    (loop [n n        ;; The number of characters left to generate.
-           j LINE_LENGTH  ;; The number of characters left to
-                          ;; generate on the current line of output
-                          ;; before printing a newline.
-           i 0] ;; Number of characters put in buffer so far.
+    (loop [n (long n)        ;; The number of characters left to generate.
+           j (long LINE_LENGTH)  ;; The number of characters left to
+           ;; generate on the current line of output
+           ;; before printing a newline.
+           i (long 0)] ;; Number of characters put in buffer so far.
       (if (zero? n)
         (do
           (.write ostream buffer 0 i)
           (when (not= b10 (aget buffer (dec i)))
             (aset buffer 0 b10)
-            (.write ostream buffer 0 1)))
+            (.write ostream buffer 0 1)
+            ))
         ;; else
         (let [rand-byte (aget codes (aget lookup-table (gen-random-fast)))]
           (if (= i buf-size)
@@ -124,10 +124,11 @@
                   (aset buffer (inc i) b10) ;; add newline
                   (recur (dec n) LINE_LENGTH (+ i 2)))
                 ;; else
-                (recur (dec n) (dec j) (inc i))))))))))
+                (recur (long (dec n)) (long (dec j)) (long (inc i)))))))))))
 
 (defn write-line [s ^java.io.BufferedOutputStream stream]
-  (.write stream (.getBytes (str s "\n"))))
+  (.write stream (.getBytes (str s "\n")))
+  )
 
 (defn -main [& args]
   (let [n (read-string (first args))
