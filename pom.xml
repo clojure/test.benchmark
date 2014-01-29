@@ -18,6 +18,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>clojure</artifactId>
+      <version>1.5.1</version>
+    </dependency>
+    <dependency>
       <groupId>swank-clojure</groupId>
       <artifactId>swank-clojure</artifactId>
       <version>1.4.0</version>
