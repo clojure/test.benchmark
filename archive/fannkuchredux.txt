@@ -1,0 +1,81 @@
+--------------------
+*CURRENT BEST JAVA*
+
+javac src/baseline/java/alioth/java/fannkuchredux.java
+time java -server -cp src/baseline/java -XX:+TieredCompilation -XX:+AggressiveOpts alioth.java.fannkuchredux
+3968050
+Pfannkuchen(12) = 65
+
+real	0m6.688s
+user	0m51.748s
+sys	0m0.052s
+
+
+--------------------
+*CURRENT BEST CLOJURE*
+(on site)
+
+[~/code/test.benchmark (master)]$ time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.fannkuchredux
+3968050
+Pfannkuchen(12) = 65
+
+real	0m16.474s
+user	2m3.180s
+sys	0m0.707s
+
+--------------------
+.1 - remove int hints, change int-arrays to long-arrays, unchecked-math
+
+real	0m13.564s
+user	1m39.030s
+sys	0m1.118s
+
+--------------------
+.2 - .1+make partial-fannkuch use prims in the loop
+
+sampling + byte code checking
+javap -c -cp target/classes alioth.fannkuchredux\$partial_fannkuch
+
+real	0m9.299s
+user	1m6.715s
+sys	0m0.866s
+
+--------------------
+.3 - .2+ switch to new metadata syntax, just cleanup
+
+--------------------
+.4 - .3 + convert macros to function, inline, etc
+
+real	0m9.597s
+user	1m8.747s
+sys	0m0.981s
+
+No improvement, revert to .3
+
+--------------------
+.5 - .3 + use deftype instead of map for tasks
+
+real	0m9.964s
+user	1m11.651s
+sys	0m0.929s
+
+no better, revert to .3
+
+--------------------
+.6 - .3 + use reducers instead of pmap
+
+real	0m10.429s
+user	1m0.400s
+sys	0m0.805s
+
+not enough tasks for this to help at all (12)
+
+--------------------
+.7 - .3 + == to =, not= to (not (= ))
+
+real	0m8.934s
+user	1m3.309s
+sys	0m0.929s
+
+--------------------
+.8 - .7 + 
