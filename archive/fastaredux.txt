@@ -100,3 +100,28 @@ sys	0m0.096s
 real	0m2.438s
 user	0m3.145s
 sys	0m0.094s
+
+--------------------
+.10 - .9 + replace gen-random-fast with definterface + deftype to get field 
+mutation instead of array mutation and return an int instead of an object.
+real	0m2.314s
+user	0m2.997s
+sys	0m0.092s
+
+--------------------
+.11 - .10 + use int math inside gen-random-fast
+
+tested using Java fasta_redux Random.next() as an alternative shows:
+real	0m1.945s
+user	0m2.592s
+sys	0m0.106s
+
+clearly the Java version is faster
+
+pushed this as far as I know how in .11 to get int math and it is slower
+
+real	0m2.813s
+user	0m3.524s
+sys	0m0.107s
+
+

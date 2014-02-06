@@ -6,8 +6,6 @@
 ;; ported to Clojure 1.3 by Marko Kocic
 ;; updated for Clojure 1.5 by Alex Miller
 ;;  removed most casts and ints, add *unchecked-math*
-;; updated by Alex Miller
-;;  changed seed gen to use deftype instead of mutable array
 
 (ns alioth.fasta-redux
   (:gen-class))

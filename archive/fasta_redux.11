@@ -6,8 +6,6 @@
 ;; ported to Clojure 1.3 by Marko Kocic
 ;; updated for Clojure 1.5 by Alex Miller
 ;;  removed most casts and ints, add *unchecked-math*
-;; updated by Alex Miller
-;;  changed seed gen to use deftype instead of mutable array
 
 (ns alioth.fasta-redux
   (:gen-class))
@@ -50,14 +48,17 @@
 (definterface Seed
   (nextSeed []))
 
-(deftype RandomSeed [^:unsynchronized-mutable ^long seed]
+(deftype RandomSeed [^:unsynchronized-mutable ^int seed
+                     ^:unsynchronized-mutable ^int im
+                     ^:unsynchronized-mutable ^int ia
+                     ^:unsynchronized-mutable ^int ic]
   Seed
   (nextSeed [_]
-    (let [new-seed (rem (+ (* seed IA) IC) IM)]
-      (set! seed new-seed)
+    (let [new-seed (unchecked-remainder-int (unchecked-add-int (unchecked-multiply-int seed ia) ic) im)]
+      (set! seed (int new-seed))
       (* new-seed LCG_SCALE))))
 
-(def ^Seed random-seed (->RandomSeed 42))
+(def ^Seed random-seed (->RandomSeed 42 3877 29573 139968))
 
 ;; Takes a vector of probabilities.
 (defn make-cumulative
