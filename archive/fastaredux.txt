@@ -116,12 +116,18 @@ real	0m1.945s
 user	0m2.592s
 sys	0m0.106s
 
-clearly the Java version is faster
+clearly the Java version of the seed calculation is faster and a
+significant component for the performance.
 
-pushed this as far as I know how in .11 to get int math and it is slower
+pushed this as far as I know how in .11 to get int math and it is slower:
 
 real	0m2.813s
 user	0m3.524s
 sys	0m0.107s
+
+I think one important difference is that the Java version is using static ints
+which get inlined directly into the bytecode with sipush. In ours, I can't get 
+local ints - using field ints helps avoid casting but makes the code load several 
+fields in every rep.
 
 
