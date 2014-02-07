@@ -130,4 +130,56 @@ which get inlined directly into the bytecode with sipush. In ours, I can't get
 local ints - using field ints helps avoid casting but makes the code load several 
 fields in every rep.
 
+--------------------
+.12 - .10 + definterface with ^long hint and long cast
 
+real	0m2.599s
+user	0m3.347s
+sys	0m0.091s
+
+  public long nextSeed();
+    Code:
+       0: aload_0
+       1: getfield      #82                 // Field seed:J
+       4: ldc2_w        #44                 // long 3877l
+       7: lmul
+       8: ldc2_w        #54                 // long 29573l
+      11: ladd
+      12: ldc2_w        #58                 // long 139968l
+      15: lrem
+      16: lstore_1
+      17: aload_0
+      18: lload_1
+      19: putfield      #82                 // Field seed:J
+      22: lload_1
+      23: ldc2_w        #66                 // double 1.586076817558299d
+      26: invokestatic  #129                // Method clojure/lang/Numbers.unchecked_multiply:(JD)D
+      29: invokestatic  #133                // Method clojure/lang/RT.longCast:(D)J
+      32: lreturn
+	  
+--------------------
+.13 - .10 + definterface with ^int hint and int cast
+
+real	0m2.370s
+user	0m3.084s
+sys	0m0.104s
+
+  public int nextSeed();
+    Code:
+       0: aload_0
+       1: getfield      #82                 // Field seed:J
+       4: ldc2_w        #44                 // long 3877l
+       7: lmul
+       8: ldc2_w        #54                 // long 29573l
+      11: ladd
+      12: ldc2_w        #58                 // long 139968l
+      15: lrem
+      16: lstore_1
+      17: aload_0
+      18: lload_1
+      19: putfield      #82                 // Field seed:J
+      22: lload_1
+      23: ldc2_w        #66                 // double 1.586076817558299d
+      26: invokestatic  #131                // Method clojure/lang/Numbers.unchecked_multiply:(JD)D
+      29: d2i
+      30: ireturn
