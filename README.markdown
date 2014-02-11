@@ -46,6 +46,18 @@ mvn clojure:swank
 script/run alioth.thread-ring 1000
 ```
 
+### Timing a benchmark (e.g. alioth.fasta-redux)
+```bash
+time script/run alioth.fasta-redux 25000000 > /dev/null
+
+real	0m2.389s
+user	0m3.329s
+sys	0m0.115s
+```
+
+In these results, alioth uses a measurement similar to the `real` timing.
+
+
 ### Running a baseline test
 Baseline tests execute a java-equivalent benchmark and compare execution times to the respective clojure benchmarks.
 The specifications for the baseline tests are in https://github.com/clojure/test.benchmark/blob/master/src/baseline/clojure/baseline/spec.clj
