@@ -1,3 +1,28 @@
+HOW TO RUN CLOJURE VERSION:
+
+1) git clone git@github.com:clojure/test.benchmark.git
+2) mvn test
+3) time script/run alioth.fasta-redux 25000000 > /dev/null
+
+For #3 I usually run this equivalent command so I know exactly what I'm getting (note hardcoded Clojure path):
+
+time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.fasta_redux 25000000 > /dev/null
+
+Different versions (described below) are in /archive/fasta_redux.*
+- fasta_redux.10 is the one currently at Alioth and checked into the repo
+- fasta_redux.13 adds int type hints in definterface+deftype
+
+Switch to 13 for example with:
+cp archive/fasta_redux.13 src/main/clojure/alioth/fasta_redux.clj
+mvn test
+
+Some useful decompiler commands for examining bytecode:
+
+javap -c -classpath target/classes alioth.fasta_redux.RandomSeed
+javap -c -classpath target/classes alioth.fasta_redux\$fasta_random
+
+
+============================================================
 fasta-redux
 
 --------------------
