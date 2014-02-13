@@ -1,4 +1,9 @@
-(ns alioth.fannkuchreduxme
+;;   The Computer Language Benchmarks Game
+;;   http://benchmarksgame.alioth.debian.org/
+;;
+;; contributed by Alex Miller, ported from Java version
+
+(ns alioth.fannkuchredux
   (:require clojure.string)
   (:import [java.util.concurrent.atomic AtomicInteger])
   (:gen-class))
