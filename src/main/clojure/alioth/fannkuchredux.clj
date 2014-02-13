@@ -161,8 +161,8 @@
 
     (print-result n (apply max max-flips) (reduce + chk-sums))))
 
-(defn -main [ns & args]
-  (let [n (if ns (Long/parseLong ns) 12)]
+(defn -main [& args]
+  (let [n (if (seq args) (Long/parseLong (first args)) 12)]
     (cond (< n 0) (print-result n -1 -1)
           (> n 12) (print-result n -1 -1)
           (<= n 1) (print-result n 0 0)
