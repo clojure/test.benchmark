@@ -10,30 +10,31 @@
 (def ^AtomicInteger task-id (AtomicInteger.))
 
 (definterface Task
-  (taskLoop [^long n])
-  (runTask [^long task ^long n ^longs p ^longs pp ^longs counts])
+  (taskLoop [])
+  (runTask [^long task ^longs p ^longs pp ^longs counts])
   (firstPermutation [^long idx ^longs p ^longs pp ^longs counts])
   (^long countFlips [^longs p ^longs pp])
   (nextPermutation [^longs p ^longs counts]))
 
 (deftype FannTask [^longs fact      ;; constant
+                   ^long n          ;; constant
                    ^long chunksz    ;; constant
                    ^long ntasks     ;; constant
                    ^longs max-flips ;; global scope
                    ^longs chk-sums  ;; global scope
                    ]
   Task
-  (taskLoop [this n]
+  (taskLoop [this]
     (let [p (long-array n)
           pp (long-array n)
           counts (long-array n)]
       (loop []
         (let [task (.getAndIncrement task-id)]
           (when (< task ntasks)
-            (.runTask this task n p pp counts)
+            (.runTask this task p pp counts)
             (recur))))))
 
-  (runTask [this task n p pp counts]
+  (runTask [this task p pp counts]
     (let [^longs max-flips max-flips
           ^longs chk-sums chk-sums
           idx-min (* task chunksz)
@@ -145,8 +146,8 @@
         max-flips (long-array ntasks)
         chk-sums (long-array ntasks)
         nthreads (.availableProcessors (Runtime/getRuntime))
-        tasks (repeatedly nthreads #(->FannTask fact chunksz ntasks max-flips chk-sums))
-        threads (into-array Thread (doall (map #(Thread. (fn [] (.taskLoop ^Task % n))) tasks)))]
+        tasks (repeatedly nthreads #(->FannTask fact n chunksz ntasks max-flips chk-sums))
+        threads (into-array Thread (doall (map #(Thread. (fn [] (.taskLoop ^Task %))) tasks)))]
     
     (doseq [^Thread t threads]
       (.start t))

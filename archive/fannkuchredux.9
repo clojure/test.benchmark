@@ -1,0 +1,163 @@
+(ns alioth.fannkuchreduxme
+  (:require clojure.string)
+  (:gen-class))
+
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* true)
+
+(def ^:const NCHUNKS 150)
+(def task-id (ref 0))
+
+(definterface Task
+  (taskLoop [])
+  (runTask [^long task ^longs max-flips ^longs chk-sums])
+  (firstPermutation [^long idx])
+  (^long countFlips [])
+  (nextPermutation []))
+
+(deftype FannTask [^longs fact                        ;; constant
+                   ^long n                            ;; constant
+                   ^long chunksz                      ;; constant
+                   ^long ntasks                       ;; constant
+                   ^longs max-flips                   ;; global scope
+                   ^longs chk-sums                    ;; global scope
+                   ^longs ^:unsynchronized-mutable p  ;; thread scope
+                   ^longs ^:unsynchronized-mutable pp ;; thread scope
+                   ^longs ^:unsynchronized-mutable counts ;; thread scope
+                   ]
+  Task
+  (taskLoop [this]
+    (set! p (long-array n))
+    (set! pp (long-array n))
+    (set! counts (long-array n))
+    (loop []
+      (let [task (dosync (let [old @task-id] (alter task-id inc) old))]
+        (when (< task ntasks)
+          (.runTask this task max-flips chk-sums)
+          (recur)))))
+  
+  (runTask [this task mf cs]
+    (let [idx-min (* task chunksz)
+          idx-max (min (aget fact n) (+ idx-min chunksz))]
+      (.firstPermutation this idx-min)
+      (loop [mflips 1
+             chksum 0
+             i idx-min]
+        (let [[^long new-mflips ^long new-chksum]
+              (if (zero? (aget p 0))
+                [mflips chksum]
+                (let [flips (.countFlips this)
+                      new-mflips (max mflips flips)                      
+                      new-chksum (+ chksum (if (zero? (mod i 2)) flips (- flips)))]
+                  [new-mflips new-chksum]))
+              new-i (inc i)]
+          (if (< new-i idx-max)
+            (do
+              (.nextPermutation this)
+              (recur (long new-mflips) (long new-chksum) new-i))
+            (do
+              (aset mf task new-mflips)
+              (aset cs task new-chksum)))))))
+  
+  (firstPermutation [_ ^long idx]
+    (let [^longs p p
+          ^longs pp pp
+          ^longs counts counts
+          ^longs fact fact
+          pl (alength p)]
+      (loop [i 0]
+        (when (< i pl)
+          (aset p i i)
+          (recur (inc i))))
+      (loop [i (dec (alength counts))
+             idx idx]
+        (when (> i 0)
+          (let [fact-i (aget fact i)
+                d (quot idx fact-i)]
+            (aset counts i d)
+            (System/arraycopy p 0 pp 0 (inc i))
+            (dotimes [j (inc i)]
+              (let [jd (+ j d)
+                    val (if (<= jd i)
+                          (aget pp jd)
+                          (aget pp (- jd i 1)))]
+                (aset p j val)))
+            (recur (dec i) (long (mod idx fact-i))))))))
+  
+  (nextPermutation [_]    
+    (let [^longs p p
+          ^longs counts counts
+          f (aget p 1)]
+      (aset p 1 (aget p 0))
+      (aset p 0 f)
+      (loop [i 1
+             f f]
+        (let [ci (inc (aget counts i))]
+          (aset counts i ci)
+          (when (> ci i)
+            (aset counts i 0)
+            (let [new-i (inc i)                
+                  next (aget p 1)]
+              (aset p 0 next)
+              (loop [j 1]
+                (when (< j new-i)
+                  (let [j+1 (inc j)]
+                    (aset p j (aget p j+1))
+                    (recur j+1))))
+              (aset p new-i f)
+              (recur new-i next)))))))
+  
+  (countFlips [_]
+    (let [^longs pp pp
+          flips 1
+          f (aget p 0)]
+      (if (zero? (aget p f))
+        1
+        (do
+          (System/arraycopy p 0 pp 0 (alength pp))
+          (loop [f f
+                 flips flips]
+            (let [new-flips (inc flips)]
+              (loop [lo 1
+                     hi (dec f)]
+                (when (< lo hi)
+                  (let [t (aget pp lo)]
+                    (aset pp lo (aget pp hi))
+                    (aset pp hi t)
+                    (recur (inc lo) (dec hi)))))
+              (let [t (aget pp f)]
+                (aset pp f f)
+                (if (not (zero? (aget pp t)))
+                  (recur t new-flips)
+                  new-flips)))))))))
+
+(defn print-result [n res chk]
+  (printf "%d\nPfannkuchen(%d) = %d\n" chk n res))
+
+(defn fannkuch [^long n]
+  (let [fact (long-array (concat [1] (reductions * (range 1 (inc n)))))
+        chunksz (quot (+ (aget fact n) NCHUNKS -1) NCHUNKS)
+        ntasks (quot (+ (aget fact n) chunksz -1) chunksz)
+        max-flips (long-array ntasks)
+        chk-sums (long-array ntasks)
+        nthreads (.availableProcessors (Runtime/getRuntime))
+        tasks (repeatedly nthreads #(->FannTask fact n chunksz ntasks
+                                                max-flips chk-sums nil nil nil))
+        threads (into-array Thread (doall (map #(Thread. (fn [] (.taskLoop ^Task %))) tasks)))]
+    
+    (doseq [^Thread t threads]
+      (.start t))
+
+    (doseq [^Thread t threads]
+      (.join t))
+
+    (print-result n (apply max max-flips) (reduce + chk-sums))))
+
+(defn -main [ns & args]
+  (let [n (if ns (Long/parseLong ns) 12)]
+    (cond (< n 0) (print-result n -1 -1)
+          (> n 12) (print-result n -1 -1)
+          (<= n 1) (print-result n 0 0)
+          :else (fannkuch n)))
+  (flush)
+  (. System (exit 0)))

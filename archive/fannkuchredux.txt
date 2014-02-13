@@ -45,37 +45,80 @@ sys	0m0.866s
 
 --------------------
 .4 - .3 + convert macros to function, inline, etc
-
 real	0m9.597s
-user	1m8.747s
-sys	0m0.981s
-
 No improvement, revert to .3
 
 --------------------
 .5 - .3 + use deftype instead of map for tasks
-
 real	0m9.964s
-user	1m11.651s
-sys	0m0.929s
-
 no better, revert to .3
 
 --------------------
 .6 - .3 + use reducers instead of pmap
-
 real	0m10.429s
-user	1m0.400s
-sys	0m0.805s
 
 not enough tasks for this to help at all (12)
 
 --------------------
 .7 - .3 + == to =, not= to (not (= ))
-
 real	0m8.934s
-user	1m3.309s
-sys	0m0.929s
 
 --------------------
-.8 - .7 + 
+--------------------
+.8 - brand new version ported directly from Java, unoptimized
+real	0m16.005s
+
+--------------------
+.9 - .8 + let typehinted arrays at top of fns
+real	0m14.948s
+
+--------------------
+.10 - .9 + replace dotimes with loop/recur
+real	0m14.382s
+
+--------------------
+.11 - .10 + use rem instead of mod in firstPermutation
+real	0m14.542s
+
+doesn't seem any faster, maybe not hot enough to matter, remove for now.
+
+--------------------
+.12 - .10 + unravel destructuring in runTask
+real	0m9.501s
+
+--------------------
+.13 - .12 + redid mod->rem in firstPermutation
+real	0m9.291s
+
+--------------------
+.14 - .13 + make p local in runTask
+real	0m9.291s
+
+--------------------
+.15 - .14 + return nil from runTask to avoid unnecessary casting
+real	0m9.069s
+
+--------------------
+.16 - .15 + AtomicInteger instead of ref
+real	0m8.701s
+
+--------------------
+.17 - .16 + remove thread state and pass hinted between fns
+real	0m8.414s
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
