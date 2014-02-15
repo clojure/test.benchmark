@@ -1,0 +1,52 @@
+--------------------
+*CURRENT BEST JAVA*
+
+javac src/baseline/java/alioth/java/knucleotide.java
+time java -server -cp src/baseline/java -XX:+TieredCompilation -XX:+AggressiveOpts alioth.java.knucleotide 0 < fastaout25m
+
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+
+real	0m7.257s
+user	0m45.734s
+sys	0m1.093s
+
+--------------------
+*CURRENT BEST CLOJURE*
+(on site)
+
+[~/code/test.benchmark (master)]$ time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.knucleotide 0 < fastaout25m
+
+real	0m15.496s
+user	1m22.148s
+sys	0m0.994s
+
+--------------------
+.1 - 
+
+
