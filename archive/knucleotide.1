@@ -1,0 +1,144 @@
+;;   The Computer Language Benchmarks Game
+;;   http://benchmarksgame.alioth.debian.org/
+;;
+;; contributed by Alex Miller
+
+(ns alioth.knucleotideme
+  (:gen-class)
+  (:require [clojure.string :as s])
+  (:import [java.util Arrays]
+           [java.util.concurrent Executors Future]
+           [clojure.lang IPersistentMap]))
+
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* true)
+
+(definterface BString
+  (calculateHash [^bytes k ^long offset])
+  (getCount ^long [])
+  (incCount [^long i]))
+
+(deftype ByteString [^:unsynchronized-mutable hash
+                     ^:unsynchronized-mutable count
+                     ^bytes bytes]
+  BString
+  (calculateHash [_ k offset]
+    (let [blen (alength bytes)]
+      (loop [i 0
+             temp 0]
+        (if (< i blen)
+          (let [b (aget k (+ offset i))]
+            (aset bytes i b)
+            (recur (inc i)
+                   (unchecked-add-int (unchecked-multiply-int temp 31) b)))
+          (set! hash temp)))))
+  (getCount [_]
+    count)
+  (incCount [_ i]
+    (set! count (+ count i)))
+  
+  Object
+  (equals [_ obj]
+    (Arrays/equals ^bytes bytes ^bytes (.-bytes ^ByteString obj)))
+  (hashCode [_] hash)
+  (toString [_] (String. ^bytes bytes))
+  
+  Comparable
+  (compareTo [this other]
+    (if (= (.-count ^ByteString other) count)
+      (.compareTo (.toString this) (.toString other))
+      (- (.-count ^ByteString other) count))))
+
+(defn new-byte-string [s]
+  (->ByteString 0 1 (byte-array s)))
+
+(defn create-fragment-map [^bytes sequence ^long offset ^long frag-len]
+  (let [last-index (inc (- (alength sequence) frag-len))]
+    (loop [index offset
+           key ^BString (new-byte-string frag-len)
+           m (transient {})]
+      (if (< index last-index)
+        (do
+          (.calculateHash key sequence index)
+          (if-let [fragment ^BString (get m key)]
+            (do (.incCount fragment 1)
+                (recur (+ index frag-len) key m))
+            (recur (+ index frag-len)
+                   (new-byte-string frag-len)
+                   (assoc! m key key))))
+        (persistent! m)))))
+
+(defn create-fragment-tasks [^bytes sequence frag-lens]
+  (doall (for [frag-len frag-lens
+               index (range frag-len)]           
+           (fn [] (create-fragment-map sequence index frag-len)))))
+
+(defn sum-two-maps [m1 m2]  
+  (doall
+   (loop [[[k v] & r] (seq m2)
+          m m1]
+     (if k
+       (if-let [sum ^BString (get m k)]
+         (do
+           (.incCount sum (.getCount ^BString v))
+           (recur r m))
+         (recur r (assoc m k v)))
+       m))))
+
+(defn write-freqs ^String [^long total-count ^IPersistentMap frequencies]
+  (println "total-count" (class total-count))
+  (println "frequencies" (class frequencies))
+  (let [list (apply sorted-set (vals frequencies))
+        sb (StringBuilder.)]
+    (doseq [^ByteString k list]
+      (.append sb (format "%s %.3f\n"
+                          (s/upper-case (.toString k))
+                          (/ (* (.getCount k) 100.0) total-count))))
+    (.append sb "\n")
+    (.toString sb)))
+
+(defn write-count ^String [futures ^String fragment]
+  (let [key ^BString (new-byte-string (.length fragment))]
+    (.calculateHash key (.getBytes fragment) 0)
+    (loop [[f & r] ^Future futures
+           count 0]
+      (if f
+        (if-let [temp ^BString (get ^IPersistentMap @f key)]
+          (recur r (+ count ^long (.getCount temp)))
+          (recur r count))
+        (str count "\t" (s/upper-case fragment) "\n")))))
+
+(defn -main [& args]
+  (let [br (java.io.BufferedReader. *in*)]
+    (while (not (.startsWith (.readLine br) ">THREE")))
+    (let [baos (java.io.ByteArrayOutputStream.)]
+      (loop [bytes (byte-array 100)
+             line (.readLine br)]
+        (when line
+          (let [llen (.length line)
+                bytes (if (> llen (alength bytes))
+                        (byte-array llen)
+                        bytes)]
+            (loop [i 0]
+              (if (< i llen)
+                (do
+                  (aset bytes i (byte (int (.charAt line i))))
+                  (recur (inc i)))
+                (.write baos bytes 0 llen)))
+            (recur bytes (.readLine br)))))
+      (let [sequence (.toByteArray baos)
+            slen (alength sequence)
+            processors (.. Runtime getRuntime availableProcessors)
+            pool (Executors/newFixedThreadPool processors)
+            tasks (create-fragment-tasks sequence [1 2 3 4 6 12 18])
+            [f1 f2 f3 :as futures] (.invokeAll pool tasks)
+            sb (StringBuilder.)]
+        (.append sb (write-freqs slen @f1))
+        (let [stm (sum-two-maps @f2 @f3)]
+          (println "stm" (class stm))
+          (.append sb (write-freqs (dec slen) stm)))
+        (doseq [fragment ["ggt", "ggta", "ggtatt", "ggtattttaatt", "ggtattttaatttatagt"]]
+          (.append sb (write-count futures fragment)))
+        (println sb)
+        (.shutdown pool))))
+  (shutdown-agents))

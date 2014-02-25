@@ -350,7 +350,7 @@
 
 
 (defn run [br]  
-  (let [n-threads (.. Runtime getRuntime availableProcessors)
+  (let [n-threads 1 #_(.. Runtime getRuntime availableProcessors)
         dna-str (fasta-dna-str-with-desc-beginning "THREE" (line-seq br))
         work-pieces-todo
         (mapcat #(break-work-into-pieces % dna-str)

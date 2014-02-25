@@ -47,6 +47,16 @@ user	1m22.148s
 sys	0m0.994s
 
 --------------------
-.1 - 
+.1 - working port of Java code
+real	0m29.953s
+
+--------------------
+.2 - .1 + make ByteString fields primitive
+real	0m25.027s
+
+--------------------
+.3 - .2 + 
+
+
 
 
