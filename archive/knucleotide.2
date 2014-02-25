@@ -14,9 +14,9 @@
 (set! *unchecked-math* true)
 
 (definterface BString
-  (calculateHash [^bytes k ^long offset])
-  (getCount ^long [])
-  (incCount [^long i]))
+  (^void calculateHash [^bytes k ^long offset])
+  (^long getCount [])
+  (^void incCount [^long i]))
 
 (deftype ByteString [^:unsynchronized-mutable ^long hash
                      ^:unsynchronized-mutable ^long count
@@ -31,9 +31,10 @@
             (aset bytes i b)
             (recur (inc i)
                    (unchecked-add-int (unchecked-multiply-int temp 31) b)))
-          (set! hash temp)))))
+          (set! hash temp))))
+    nil)
   (getCount [_] count)
-  (incCount [_ i] (set! count (+ count i)))
+  (incCount [_ i] (set! count (+ count i)) nil)
   
   Object
   (equals [_ obj]
