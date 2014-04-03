@@ -32,9 +32,9 @@ GG 3.902
 893	GGTATTTTAATT
 893	GGTATTTTAATTTATAGT
 
-real	0m7.257s
-user	0m45.734s
-sys	0m1.093s
+real	0m25.630s
+user	0m25.951s
+sys	0m0.288s
 
 --------------------
 *CURRENT BEST CLOJURE*
@@ -69,8 +69,6 @@ real	0m3.406s
 real	0m25.425s
 
 --------------------
-
-
 *SCALA VERSION*
 (Using Java 8 now)
 
@@ -82,39 +80,12 @@ time env JAVA_OPTS=-Xmx3G java -server -XX:+TieredCompilation -XX:+AggressiveOpt
 
 real	0m4.421s
 
-read 1048576
-read 1048576
-read 444593
-read -1
-(addLots size ,0)
-bs.index 50793 bs.size 812697 bs.n 18 size 0
-(looping from ,18)
-(addLots size ,812697)
-bs.index 27331 bs.size 437303 bs.n 14 size 812697
-(looping from ,14)
-(data size ,1250000)
 
+--------------------
+.4 - brand new version ported from Scala version
 
+2.5m
+real	0m2.756s
 
-time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.knucleotides 0 < fastaout25m
-
-
-
-
-loop 1 2 | 15 2 2 560
-
-i = 15
-11010000110001110111010100110001 -792234703
-want to right shift i*2=30:
-00000000000000000000000000000011 3  
-actually getting:
-11111111111111111111111111111111 17179869183 
-
-next operation is to left-shift next data value
-then bit-or 
-then mask
-
-B:  15 2 -792234703 30 17179869183 15
-
-
-
+25m
+real	0m11.343s

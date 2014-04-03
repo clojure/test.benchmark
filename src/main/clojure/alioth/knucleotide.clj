@@ -1,9 +1,10 @@
 ;   The Computer Language Benchmarks Game
 ;;   http://benchmarksgame.alioth.debian.org/
 ;;
+;; ported from Scala #2
 ;; contributed by Alex Miller
 
-(ns alioth.knucleotides
+(ns alioth.knucleotide
   (:gen-class)
   (:require [clojure.string :as s])
   (:import [java.util.concurrent Executors Future]
@@ -111,7 +112,7 @@
   (getSize [_] size))
 
 (definterface IDnaHash
-  (^alioth.knucleotides.IDnaHash add [^long key ^long count])
+  (^alioth.knucleotide.IDnaHash add [^long key ^long count])
   (^long get [^long key])
   (^void printSorted []))
 
