@@ -52,11 +52,69 @@ real	0m29.953s
 
 --------------------
 .2 - .1 + make ByteString fields primitive
-real	0m25.027s
+
+2.5m
+real	0m3.474s
+
+25m
+real	0m24.935s
 
 --------------------
-.3 - .2 + 
+.3 - .2 + tweak hash calculation to avoid boxing
 
+2.5m
+real	0m3.406s
+
+25m
+real	0m25.425s
+
+--------------------
+
+
+*SCALA VERSION*
+(Using Java 8 now)
+
+Compile:
+/Users/alex/code/tools/scala-2.10.3/bin/scalac -optimise -target:jvm-1.7 src/baseline/scala/knucleotide.scala
+
+Run:
+time env JAVA_OPTS=-Xmx3G java -server -XX:+TieredCompilation -XX:+AggressiveOpts -Xbootclasspath/a:/Users/alex/code/tools/scala-2.10.3/lib/scala-library.jar:/Users/alex/code/tools/scala-2.10.3/lib/akka-actors.jar:/Users/alex/code/tools/scala-2.10.3/lib/typesafe-config.jar knucleotide 0 < fastaout25m
+
+real	0m4.421s
+
+read 1048576
+read 1048576
+read 444593
+read -1
+(addLots size ,0)
+bs.index 50793 bs.size 812697 bs.n 18 size 0
+(looping from ,18)
+(addLots size ,812697)
+bs.index 27331 bs.size 437303 bs.n 14 size 812697
+(looping from ,14)
+(data size ,1250000)
+
+
+
+time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.knucleotides 0 < fastaout25m
+
+
+
+
+loop 1 2 | 15 2 2 560
+
+i = 15
+11010000110001110111010100110001 -792234703
+want to right shift i*2=30:
+00000000000000000000000000000011 3  
+actually getting:
+11111111111111111111111111111111 17179869183 
+
+next operation is to left-shift next data value
+then bit-or 
+then mask
+
+B:  15 2 -792234703 30 17179869183 15
 
 
 

@@ -30,7 +30,7 @@
           (let [b (aget k (+ offset i))]
             (aset bytes i b)
             (recur (inc i)
-                   (unchecked-add-int (unchecked-multiply-int temp 31) b)))
+                   (unchecked-add-int (unchecked-multiply-int temp 31) (long b))))
           (set! hash temp))))
     nil)
   (getCount [_] count)
