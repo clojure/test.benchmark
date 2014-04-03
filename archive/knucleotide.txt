@@ -32,9 +32,9 @@ GG 3.902
 893	GGTATTTTAATT
 893	GGTATTTTAATTTATAGT
 
-real	0m25.630s
-user	0m25.951s
-sys	0m0.288s
+real	0m6.962s
+user	0m44.659s
+sys	0m0.331s
 
 --------------------
 *CURRENT BEST CLOJURE*
