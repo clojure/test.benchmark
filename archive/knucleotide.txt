@@ -129,6 +129,10 @@ real	0m9.328s
 .11 - .10 + changed lookup table calculation, cosmetic stuff
 real	0m9.249s
 
+--------------------
+.12 - .11 + reorg'ed code, and improved lookup table generation
+real	0m9.301s
+
 
 
 
