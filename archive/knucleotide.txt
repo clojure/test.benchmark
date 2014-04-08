@@ -95,3 +95,42 @@ real	0m11.343s
 
 25m
 real	0m13.671s
+
+--------------------
+.6 - .5 + lots more tuning
+
+real	0m11.923s
+user	0m43.390s
+sys	0m2.523s
+
+Breakdown from readb:
+51 ms  ->Bits
+50 ms  read
+61 ms  compare for newline
+200 ms (.get data i)
+513 ms .add2
+
+--------------------
+.7 - .6 + much speculative work on simpifying read process
+
+--------------------
+.8 - .6 + remove more boxed math and some cruft
+real	0m11.716s
+
+--------------------
+.9 - .8 + forkjoin instead of executor
+real	0m12.048s
+
+--------------------
+.10 - .8 + changed rehash constants, many bytecode tweaks
+real	0m9.328s
+
+--------------------
+.11 - .10 + changed lookup table calculation, cosmetic stuff
+real	0m9.249s
+
+
+
+
+
+ 

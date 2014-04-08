@@ -13,8 +13,13 @@
            [java.nio.channels Channels ReadableByteChannel]
            [java.nio ByteBuffer]))
 
+;;(set! *warn-on-boxed-math* true)
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
+
+(def ^:const charmap {\a 0 \A 0 \t 1 \T 1 \g 2 \G 2 \c 3 \C 3})
+(def table
+  (long-array (for [i (range 256)] (get charmap (char i) -1))))
 
 (definterface IBits
   (add2 [^long b])
@@ -40,14 +45,14 @@
   (addLots [this bs]
     (let [data ^ints data
           bs ^Bits bs]
-      (if (or (= n 0) (> n 30))
+      (if (or (zero? n) (> n 30))
         (do
           (when (> n 30)
             (set! index (inc index))
             (set! n 0))
           (System/arraycopy ^ints (.-data bs) 0 data index (.-index bs))
           (set! index (+ index (.-index bs)))
-          (when (and (> index 0) (= n 0))
+          (when (and (> index 0) (zero? n))
             (set! index (dec index))
             (set! n 32)))
         (do
@@ -59,14 +64,13 @@
                 (aset data index (bit-or (aget data index) (Numbers/unsignedShiftRightInt j (- 32 n))))
                 (recur (inc i)))))))
       (set! size (+ size (* 16 ^long (.-index bs))))
-      (let [bsn (.-n bs)]
-        (when (> bsn 0)
-          (loop [n bsn
-                 i (aget ^ints (.-data bs) (.-index bs))]
-            (when (> n 0)
-              (.add2 this i)
-              (recur (long (- n 2))
-                     (long (Numbers/unsignedShiftRightInt i 2)))))))
+      (when (not= (.-n bs) 0)
+        (loop [n (.-n bs)
+               i (aget ^ints (.-data bs) (.-index bs))]
+          (when (> n 0)
+            (.add2 this i)
+            (recur (long (- n 2))
+                   (long (Numbers/unsignedShiftRightInt i 2))))))
       nil))
   (scan [_ n offset]
     (let [data ^ints data
@@ -106,13 +110,13 @@
   (^long get [^long key])
   (^void printSorted []))
 
-(defmacro hc [l size]
-  `(bit-and (+ ~l (bit-shift-right ~l 17)) (dec ~size)))
+(defn- hc ^long [^long l ^long size]
+  (bit-and (+ l (bit-shift-right l 17)) (dec size)))
 
-(defmacro nx [i size]
-  `(bit-and (inc ~i) (dec ~size)))
+(defn- nx ^long [^long i ^long size]
+  (bit-and (inc i) (dec size)))
 
-(def ^:constant decode ["A" "T" "G" "C"])
+(def ^:constant decode ["A" "T" "G" "C"] #_{0 "A" 1 "T" 2 "G" 3 "C"})
 (defn l2s [^long l ^long n]
   (if (<= n 0)
     ""
@@ -128,10 +132,10 @@
     (let [size size
           keys ^longs keys
           counters ^longs counters
-          index (int (hc key size))]
+          index (hc key size)]
       (cond
        ;; new key
-       (= (aget counters index) 0)
+       (zero? (aget counters index))
        (do
          (aset keys index key)
          (aset counters index count)
@@ -146,7 +150,7 @@
 
        ;; rehash
        (> (* 6 n) size)
-       (let [newsize (* size 64)
+       (let [newsize (* size 2)
              newhash (DnaHash. z newsize 0 (long-array newsize) (long-array newsize))]
          (loop [i 0]
            (if (< i size)
@@ -158,31 +162,29 @@
                (.add newhash key 1)
                newhash))))
 
-       true
-       (loop [i (nx index size)]
-         (let [ii (int i)]
-           (if (or (= 0 (aget counters ii))
-                   (= key (aget keys ii)))
-             (if (= (aget counters i) 0)
-               (do
-                 (aset keys ii key)
-                 (aset counters ii count)
-                 (set! n (inc n))
-                 this)
-               (do
-                 (aset counters ii (+ (aget counters ii) count))
-                 this))
-             (recur (nx i size))))))))
+       :else-next-location
+       (let [i (loop [i (nx index size)]
+                 (if (and (not= 0 (aget counters i))
+                          (not= key (aget keys i)))
+                   (recur (nx i size))
+                   i))]
+         (if (zero? (aget counters i))
+           (do
+             (aset keys i key)
+             (aset counters i count)
+             (set! n (inc n)))
+           (aset counters i (+ (aget counters i) count)))
+         this))))
   (get [_ key]
     (loop [i (hc key size)]
       (if (and (pos? (aget counters i)) (not= key (aget keys i)))
         (recur i)
         (aget counters i))))
   (printSorted [this]
-    (let [tcounts (long (loop [idx 0 acc 0]
-                          (if (< idx (alength counters))
-                            (recur (inc idx) (+ acc (aget counters idx)))
-                            acc)))
+    (let [tcounts (loop [idx 0 acc 0]
+                    (if (< idx (alength counters))
+                      (recur (inc idx) (+ acc (aget counters idx)))
+                      acc))
           factor (/ 100.0 tcounts)
           freqs (loop [i 0
                        acc (transient [])]
@@ -196,26 +198,120 @@
         (printf "%s %.3f\n" label freq))
       (println))))
 
-(def table (long-array (for [i (range 256)]
-                         (case i
-                           (97 65) 0
-                           (116 84) 1
-                           (103 71) 2
-                           (99 67) 3
-                           -1))))
-
 (defn prints [^IDnaHash d ^String s]
   (let [bs (.getBytes s)
-        mapped (map (fn [^long b] (aget ^longs table (bit-and b 0xFF))) bs)
-        k (reduce (fn [^long acc ^long b] (+ (* 4 acc) b)) 0 (reverse mapped))]
+        mapped (map #(aget ^longs table (bit-and % 0xFF)) bs)
+        k (reduce #(+ (* 4 %1) %2) 0 (reverse mapped))]
     (format "%d\t%s" (.get d k) s)))
+
+#_(defn scan-batches [batches size n offset]  ;; size = sum counts from all batches
+  (let [[[data & data-count] & more-data] batches
+        mask (dec (bit-shift-left 1 (* n 2)))
+        scanned (long-array (quot size n))]
+    (loop [data ^ints data
+           data-count (long data-count)
+           more-data more-data
+           i (rem offset 16)
+           j (quot offset 16)
+           scan-index 0]
+      (if (<= (+ (* j 16) i n) size)
+        (if (<= (+ i n) 16)
+          (let [l (bit-and (unsigned-bit-shift-right (aget data j) (* 2 i)) mask)
+                newi (+ i n)]
+            (aset scanned scan-index l)
+            (if (>= newi 16)
+              (recur (- newi 16) (inc j) (inc scan-index))
+              (recur newi j (inc scan-index))))
+          (let [l (bit-and (bit-or (Numbers/unsignedShiftRightInt (aget data j) (int (* 2 i)))
+                                   (bit-shift-left (aget data (inc j)) (* 2 (- 16 i))))
+                           mask)
+                newj (inc j)
+                newi (+ i (- n 16))]
+            (aset scanned scan-index l)
+            (if (>= newi 16)
+              (recur (- newi 16) (inc newj) (inc scan-index))
+              (recur newi newj (inc scan-index)))))
+        (do
+          (loop [pad-index scan-index]
+            (if (< pad-index (alength scanned))
+              (do (aset scanned scan-index -1)
+                  (recur (inc pad-index)))
+              scanned)))))))
+
+;;;; LOADING THE DATA FROM STDIN
 
 (defn r ^long [^ReadableByteChannel ch ^ByteBuffer d]
   (.clear d)
   (.read ch d))
 
+;;;; #### Speculative ####
+
+(deftype Data [^ints data ;; array of ints, each of which has 16 2-bit slots
+               ^long size ;; number of bits in Bits
+               ^long index ;; write index in data
+               ^long n] ;; bit offset to write at current index
+  )
+
+(def ^:constant ^:long READ_BUFFER_SIZE 1048576)
+
+(defn empty-data []
+  (Data. (int-array READ_BUFFER_SIZE) 0 0 0))
+
+(defn full-data [^ints bits ^long size]
+  (Data. bits size 0 0))
+
+(defn partial-data [data size index n]
+  (Data. data size index n))
+
+(defn read-batch [^ByteBuffer data ^long n ^long start acc]
+  (let [table ^longs table
+        current-out ^Data (peek acc)
+        read-buffer-size READ_BUFFER_SIZE]
+    (loop [i     start                 ;; read index in data
+           bits  ^ints (.-data current-out)  ;; output data array
+           index (.-index current-out)    ;; write index in bits
+           j     (.-n current-out) ;; bit offset at index in bits
+           count (.-size current-out) ;; symbols processed in current bits
+           acc   acc                   ;; collected list of Data
+           ]
+      (if (< i n)
+        (if (= count read-buffer-size)
+          ;; output buffer is full
+          (let [new-out ^Data (empty-data)]
+            ;;(println "Creating new empty buffer" i count)
+            (recur i (.-data new-out) 0 0 0 (conj (conj (pop acc) (full-data bits count)) new-out)))
+
+          ;; read input-buffer
+          (let [d (long (.get data i))]
+            (if (= d (long 10)) ;; if newline
+              ;; advance reader but not writer
+              (recur (inc i) bits index j count acc)
+
+              ;; write input value to output buffer
+              (let [b (aget table (bit-and d 0xFF))]                
+                (aset bits index (bit-or (long (aget bits index))
+                                         (Numbers/shiftLeftInt (bit-and b 0x3) n)))
+                (if (> j 30)
+                  ;; walk to next int in bits
+                  (recur (inc i) bits (inc index) 0 (inc count) acc)
+                  ;; stay at same int in bits but advance bit pointer
+                  (recur (inc i) bits index (+ 2 j) (inc count) acc))))))
+        (conj (pop acc) (partial-data bits count index j))))))
+
+(defn read-batches [^ReadableByteChannel ch ^ByteBuffer data ^long n ^long i]
+  (loop [i i  ;; read index in data        
+         n n  ;; size of data
+         acc (list (empty-data)) ;; accumulated Data batches
+         ]
+    (if (<= n 0)
+      (reverse acc)
+      (let [acc (read-batch data n i acc)]
+        (recur 0 (r ch data) acc)))))
+
+;;;; #### End Speculative ####
+
 (defn add-all [bitsv]
-  (let [total-size (inc ^long (/ ^long (reduce (fn ^long [a b] (+ ^long a ^long (.getSize ^IBits b))) 0 bitsv) 16))
+  (let [total-size (inc (/ (reduce (fn ^long [a b] (+ ^long a ^long (.getSize ^IBits b))) 0 bitsv) 16))
         all ^IBits (->Bits (int-array total-size) 0 0 0)]
     (doseq [^IBits bits bitsv :when (pos? (.getSize bits))]
       (.addLots all bits))
@@ -243,8 +339,8 @@
     (if (< i n)
       (if (= (long (.get data i)) 10) ;; \newline
         (if (= (inc i) n)
-          (readb ch data (r ch data) 0)
-          (readb ch data n i))
+          (time (read-batches ch data (r ch data) 0)) #_(readb ch data (r ch data) 0)
+          (time (read-batches ch data n i)) #_(readb ch data n i))
         (recur (inc i) n))
       (recur 0 (r ch data)))))
 
@@ -272,11 +368,13 @@
             (skip ch data n i)))
         (recur 0 need match (r ch data))))))
 
+;;;; MAIN
+
 (defn addToHash [^IBits data ^IDnaHash h ^long n ^long offset]
   (let [s ^longs (.scan data n offset)
         c (alength s)]
     (loop [h h i 0]
-      (if (< i c)
+      (if (and (< i c))
         (let [si (aget s i)]
           (if (< si 0)
             h
@@ -286,11 +384,17 @@
 (defn -main [& args]
   (let [sizes [1 2 3 4 6 12 18]
         sequence "GGTATTTTAATTTATAGT"
-        data (loadf ">THREE")
+        data (time (loadf ">THREE"))
+
+        sizes (map #(.-size ^Data %) data)
+        _ (println sizes)
+        _ (println (count sizes) (apply + sizes))
+        
+        
         tasks (doall
-               (map (fn [^long n]
+               (map (fn [n]
                       (fn []
-                        (loop [h (DnaHash. n 512 0 (long-array 512) (long-array 512))
+                        (loop [h (DnaHash. n 16 0 (long-array 16) (long-array 16))
                                i 0]
                           (if (< i n)
                             (recur (addToHash data h n i) (inc i))

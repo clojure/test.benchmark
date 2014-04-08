@@ -13,8 +13,21 @@
            [java.nio.channels Channels ReadableByteChannel]
            [java.nio ByteBuffer]))
 
+(set! *warn-on-boxed-math* true)
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
+
+(def ^:const charmap {\a 0
+                      \A 0
+                      \t 1
+                      \T 1
+                      \g 2
+                      \G 2
+                      \c 3
+                      \C 3})
+
+(def table
+  (long-array (for [i (range 256)] (get charmap (char i) -1))))
 
 (definterface IBits
   (add2 [^long b])
@@ -196,14 +209,6 @@
         (printf "%s %.3f\n" label freq))
       (println))))
 
-(def table (long-array (for [i (range 256)]
-                         (case i
-                           (97 65) 0
-                           (116 84) 1
-                           (103 71) 2
-                           (99 67) 3
-                           -1))))
-
 (defn prints [^IDnaHash d ^String s]
   (let [bs (.getBytes s)
         mapped (map (fn [^long b] (aget ^longs table (bit-and b 0xFF))) bs)
@@ -212,7 +217,9 @@
 
 (defn r ^long [^ReadableByteChannel ch ^ByteBuffer d]
   (.clear d)
-  (.read ch d))
+  (let [n (.read ch d)]
+    ;;(println "read" n)
+    n))
 
 (defn add-all [bitsv]
   (let [total-size (inc ^long (/ ^long (reduce (fn ^long [a b] (+ ^long a ^long (.getSize ^IBits b))) 0 bitsv) 16))

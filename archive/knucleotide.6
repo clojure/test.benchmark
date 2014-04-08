@@ -13,8 +13,21 @@
            [java.nio.channels Channels ReadableByteChannel]
            [java.nio ByteBuffer]))
 
+;;(set! *warn-on-boxed-math* true)
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
+
+(def ^:const charmap {\a 0
+                      \A 0
+                      \t 1
+                      \T 1
+                      \g 2
+                      \G 2
+                      \c 3
+                      \C 3})
+
+(def table
+  (long-array (for [i (range 256)] (get charmap (char i) -1))))
 
 (definterface IBits
   (add2 [^long b])
@@ -40,14 +53,14 @@
   (addLots [this bs]
     (let [data ^ints data
           bs ^Bits bs]
-      (if (or (= n 0) (> n 30))
+      (if (or (zero? n) (> n 30))
         (do
           (when (> n 30)
             (set! index (inc index))
             (set! n 0))
           (System/arraycopy ^ints (.-data bs) 0 data index (.-index bs))
           (set! index (+ index (.-index bs)))
-          (when (and (> index 0) (= n 0))
+          (when (and (> index 0) (zero? n))
             (set! index (dec index))
             (set! n 32)))
         (do
@@ -59,14 +72,13 @@
                 (aset data index (bit-or (aget data index) (Numbers/unsignedShiftRightInt j (- 32 n))))
                 (recur (inc i)))))))
       (set! size (+ size (* 16 ^long (.-index bs))))
-      (let [bsn (.-n bs)]
-        (when (> bsn 0)
-          (loop [n bsn
-                 i (aget ^ints (.-data bs) (.-index bs))]
-            (when (> n 0)
-              (.add2 this i)
-              (recur (long (- n 2))
-                     (long (Numbers/unsignedShiftRightInt i 2)))))))
+      (when (not= (.-n bs) 0)
+        (loop [n (.-n bs)
+               i (aget ^ints (.-data bs) (.-index bs))]
+          (when (> n 0)
+            (.add2 this i)
+            (recur (long (- n 2))
+                   (long (Numbers/unsignedShiftRightInt i 2))))))
       nil))
   (scan [_ n offset]
     (let [data ^ints data
@@ -106,13 +118,13 @@
   (^long get [^long key])
   (^void printSorted []))
 
-(defmacro hc [l size]
-  `(bit-and (+ ~l (bit-shift-right ~l 17)) (dec ~size)))
+(defn- hc ^long [^long l ^long size]
+  (bit-and (+ l (bit-shift-right l 17)) (dec size)))
 
-(defmacro nx [i size]
-  `(bit-and (inc ~i) (dec ~size)))
+(defn- nx ^long [^long i ^long size]
+  (bit-and (inc i) (dec size)))
 
-(def ^:constant decode ["A" "T" "G" "C"])
+(def ^:constant decode ["A" "T" "G" "C"] #_{0 "A" 1 "T" 2 "G" 3 "C"})
 (defn l2s [^long l ^long n]
   (if (<= n 0)
     ""
@@ -128,10 +140,10 @@
     (let [size size
           keys ^longs keys
           counters ^longs counters
-          index (int (hc key size))]
+          index (hc key size)]
       (cond
        ;; new key
-       (= (aget counters index) 0)
+       (zero? (aget counters index))
        (do
          (aset keys index key)
          (aset counters index count)
@@ -146,7 +158,7 @@
 
        ;; rehash
        (> (* 6 n) size)
-       (let [newsize (* size 64)
+       (let [newsize (* size 2)
              newhash (DnaHash. z newsize 0 (long-array newsize) (long-array newsize))]
          (loop [i 0]
            (if (< i size)
@@ -158,31 +170,29 @@
                (.add newhash key 1)
                newhash))))
 
-       true
-       (loop [i (nx index size)]
-         (let [ii (int i)]
-           (if (or (= 0 (aget counters ii))
-                   (= key (aget keys ii)))
-             (if (= (aget counters i) 0)
-               (do
-                 (aset keys ii key)
-                 (aset counters ii count)
-                 (set! n (inc n))
-                 this)
-               (do
-                 (aset counters ii (+ (aget counters ii) count))
-                 this))
-             (recur (nx i size))))))))
+       :else-next-location
+       (let [i (loop [i (nx index size)]
+                 (if (and (not= 0 (aget counters i))
+                          (not= key (aget keys i)))
+                   (recur (nx i size))
+                   i))]
+         (if (zero? (aget counters i))
+           (do
+             (aset keys i key)
+             (aset counters i count)
+             (set! n (inc n)))
+           (aset counters i (+ (aget counters i) count)))
+         this))))
   (get [_ key]
     (loop [i (hc key size)]
       (if (and (pos? (aget counters i)) (not= key (aget keys i)))
         (recur i)
         (aget counters i))))
   (printSorted [this]
-    (let [tcounts (long (loop [idx 0 acc 0]
-                          (if (< idx (alength counters))
-                            (recur (inc idx) (+ acc (aget counters idx)))
-                            acc)))
+    (let [tcounts (loop [idx 0 acc 0]
+                    (if (< idx (alength counters))
+                      (recur (inc idx) (+ acc (aget counters idx)))
+                      acc))
           factor (/ 100.0 tcounts)
           freqs (loop [i 0
                        acc (transient [])]
@@ -196,26 +206,20 @@
         (printf "%s %.3f\n" label freq))
       (println))))
 
-(def table (long-array (for [i (range 256)]
-                         (case i
-                           (97 65) 0
-                           (116 84) 1
-                           (103 71) 2
-                           (99 67) 3
-                           -1))))
-
 (defn prints [^IDnaHash d ^String s]
   (let [bs (.getBytes s)
-        mapped (map (fn [^long b] (aget ^longs table (bit-and b 0xFF))) bs)
-        k (reduce (fn [^long acc ^long b] (+ (* 4 acc) b)) 0 (reverse mapped))]
+        mapped (map #(aget ^longs table (bit-and % 0xFF)) bs)
+        k (reduce #(+ (* 4 %1) %2) 0 (reverse mapped))]
     (format "%d\t%s" (.get d k) s)))
 
 (defn r ^long [^ReadableByteChannel ch ^ByteBuffer d]
   (.clear d)
-  (.read ch d))
+  (let [n (.read ch d)]
+    ;;(println "read" n)
+    n))
 
 (defn add-all [bitsv]
-  (let [total-size (inc ^long (/ ^long (reduce (fn ^long [a b] (+ ^long a ^long (.getSize ^IBits b))) 0 bitsv) 16))
+  (let [total-size (inc (/ (reduce (fn ^long [a b] (+ ^long a ^long (.getSize ^IBits b))) 0 bitsv) 16))
         all ^IBits (->Bits (int-array total-size) 0 0 0)]
     (doseq [^IBits bits bitsv :when (pos? (.getSize bits))]
       (.addLots all bits))
@@ -243,8 +247,8 @@
     (if (< i n)
       (if (= (long (.get data i)) 10) ;; \newline
         (if (= (inc i) n)
-          (readb ch data (r ch data) 0)
-          (readb ch data n i))
+          (time (readb ch data (r ch data) 0))
+          (time (readb ch data n i)))
         (recur (inc i) n))
       (recur 0 (r ch data)))))
 
@@ -276,7 +280,7 @@
   (let [s ^longs (.scan data n offset)
         c (alength s)]
     (loop [h h i 0]
-      (if (< i c)
+      (if (and (< i c))
         (let [si (aget s i)]
           (if (< si 0)
             h
@@ -286,11 +290,11 @@
 (defn -main [& args]
   (let [sizes [1 2 3 4 6 12 18]
         sequence "GGTATTTTAATTTATAGT"
-        data (loadf ">THREE")
+        data (time (loadf ">THREE")) #_(time (loadf3))
         tasks (doall
-               (map (fn [^long n]
+               (map (fn [n]
                       (fn []
-                        (loop [h (DnaHash. n 512 0 (long-array 512) (long-array 512))
+                        (loop [h (DnaHash. n 16 0 (long-array 16) (long-array 16))
                                i 0]
                           (if (< i n)
                             (recur (addToHash data h n i) (inc i))
