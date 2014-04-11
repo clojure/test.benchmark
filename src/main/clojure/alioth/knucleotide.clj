@@ -271,9 +271,6 @@
 (defn -main [& args]
   (let [sizes [1 2 3 4 6 12 18]
         sequence "GGTATTTTAATTTATAGT"
-        processors (.. Runtime getRuntime availableProcessors)
-        pool (future (Executors/newFixedThreadPool processors))        
-
         data ^IBits (loadf ">THREE")
         tasks (doall
                (map (fn [^long n]
@@ -284,7 +281,9 @@
                             (recur (.addToHash data h n i) (inc i))
                             h))))
                     sizes))        
-        [f1 f2 :as futures] (.invokeAll @pool tasks)]
+        processors (.. Runtime getRuntime availableProcessors)
+        pool (Executors/newFixedThreadPool processors)
+        [f1 f2 :as futures] (.invokeAll pool tasks)]
     (.printSorted ^DnaHash @f1)
     (.printSorted ^DnaHash @f2)
 
@@ -293,5 +292,5 @@
       (when f
         (println (prints @f (subs sequence 0 s)))
         (recur fs ss)))
-    (.shutdown @pool)
+    (.shutdown pool)
     (shutdown-agents)))

@@ -137,7 +137,7 @@ real	0m9.301s
 
 --------------------
 .13 - .12 + replaced allocation and walking of big arrays with mere traversal
-real	0m5.728s
+real	0m5.714s
 
 
 
