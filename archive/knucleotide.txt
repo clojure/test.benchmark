@@ -42,6 +42,8 @@ sys	0m0.331s
 
 [~/code/test.benchmark (master)]$ time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -XX:+TieredCompilation -XX:+AggressiveOpts alioth.knucleotide 0 < fastaout25m
 
+time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar -server -XX:+TieredCompilation -XX:+AggressiveOpts -Xmx1024m alioth.knucleotide 0 < fastaout25m
+
 real	0m15.496s
 user	1m22.148s
 sys	0m0.994s
@@ -133,8 +135,10 @@ real	0m9.249s
 .12 - .11 + reorg'ed code, and improved lookup table generation
 real	0m9.301s
 
+--------------------
+.13 - .12 + replaced allocation and walking of big arrays with mere traversal
+real	0m5.728s
 
 
 
 
- 
