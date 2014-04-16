@@ -1,0 +1,50 @@
+--------------------
+*CURRENT BEST JAVA*
+
+javac src/baseline/java/alioth/java/revcomp.java
+time java -server -cp src/baseline/java -XX:+TieredCompilation -XX:+AggressiveOpts alioth.java.revcomp 0 < fastaout25m > out
+
+real	0m1.330s
+user	0m1.475s
+sys	0m0.445s
+
+
+--------------------
+*CURRENT BEST CLOJURE*
+
+$ time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.5.1/clojure-1.5.1.jar -server -XX:+TieredCompilation -XX:+AggressiveOpts -Xmx384m alioth.revcompsite 0 < fastaout25m
+
+real	0m2.687s
+user	0m2.536s
+sys	0m0.563s
+
+--------------------
+.1 - port of Scala version to Clojure
+real	0m2.540s
+
+--------------------
+.2 - .1+fixed some boxing 
+real	0m2.479s
+
+
+
+inner (mapping) times:
+"Elapsed time: 94.799 msecs"
+"Elapsed time: 138.018 msecs"
+"Elapsed time: 213.798 msecs"
+
+reverse:
+"Elapsed time: 69.879 msecs"
+"Elapsed time: 74.978 msecs"
+"Elapsed time: 115.589 msecs"
+
+write:
+"Elapsed time: 1541.864 msecs"
+"Elapsed time: 2343.521 msecs"
+"Elapsed time: 3884.593 msecs"
+
+
+
+"Elapsed time: 67.378 msecs"
+"Elapsed time: 71.298 msecs"
+NGAATAATTCRGTCTGAANNAATAGVADACYTACGGTGGATSTTAGGTYSCAWCCACTTK"Elapsed time: 110.546 msecs"
