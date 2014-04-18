@@ -1,0 +1,37 @@
+--------------------
+*CURRENT BEST JAVA*
+
+javac src/baseline/java/alioth/java/mandelbrot.java
+time java -server -cp src/baseline/java -XX:+TieredCompilation -XX:+AggressiveOpts alioth.java.mandelbrot 16000 > out
+
+real	0m3.407s
+user	0m24.672s
+sys	0m0.208s
+
+--------------------
+*CURRENT BEST CLOJURE*
+
+$ time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar -server -XX:+TieredCompilation -XX:+AggressiveOpts -XX:+UseBiasedLocking -Xmx128m alioth.mandelbrotsite 16000 > o
+
+real	0m6.359s
+user	0m40.166s
+sys	0m0.445s
+
+--------------------
+.1 - modernization of current clojure version
+real	0m5.012s
+
+--------------------
+.2 - port of Scala version 
+
+--------------------
+.3 - port of Java version, no tuning
+real	0m4.960s
+
+--------------------
+.4 - .3 + some tweaks for performance
+real	0m4.877s
+
+--------------------
+.5 - .4 + some more tweaks in main in output loop
+real	0m4.719s

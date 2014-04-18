@@ -1,0 +1,109 @@
+;;   The Computer Language Benchmarks Game
+;;   http://benchmarksgame.alioth.debian.org/
+
+;; contributed by Andy Fingerhut
+
+;; The function 'dot' is based on suggestions and improvements made by
+;; these people posting to the Clojure Google group in April, 2009:
+;; dmitri.sotnikov, William D. Lipe, Paul Stadig, michael.messinides
+;; David Sletten, John Harrop
+
+;; change by Marko Kocic
+;; reduced code size by removing functions already present in Clojure
+
+;; change by Andy Fingerhut
+;; Use Java primitive double arrays instead of Clojure sequences in a
+;; few inner loops.  This is a parallel version, identical to the
+;; sequential version except using pmap in compute-rows.
+
+(ns alioth.mandelbrotme
+  (:gen-class)
+  (:import (java.io BufferedOutputStream)))
+
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* true)
+
+(def ^:const ^long max-iterations 50)
+(def ^:const ^double limit-square 4.0)
+
+(defn dot [^double r ^double i]
+  (let [f2 2.0
+        limit-square limit-square
+        iterations-remaining max-iterations
+        pr r
+        pi i]
+    ;; The loop below is similar to the one in the Perl subroutine dot
+    ;; in mandelbrot.perl, with these name correspondences:
+    ;; pr <-> Cr, pi <-> Ci, zi <-> Zi, zr <-> Zr, zr2 <-> Tr, zi2 <-> Ti
+    (loop [zr 0.0
+           zi 0.0
+           i (inc iterations-remaining)]
+      (let [zr2 (* zr zr)
+            zi2 (* zi zi)]
+        (if (and (not (zero? i))
+                 (< (+ zr2 zi2) limit-square))
+          (recur (+ (- zr2 zi2) pr)
+                 (+ (* (* f2 zr) zi) pi)
+                 (dec i))
+          (zero? i))))))
+
+(defn index-to-val ^double [^long i ^double scale-fac ^double offset]
+  (+ (* i scale-fac) offset))
+
+(defn ubyte ^long [^long val]
+  (if (>= val 128)
+    (- val 256)
+    val))
+
+(defn compute-row [#^doubles x-vals ^double y]
+  (let [y y
+        n (alength x-vals)
+        num-bytes-out (quot (unchecked-add-int n 7) 8)
+        result (byte-array num-bytes-out)]
+    (loop [i 0
+           b 0
+           num-filled-bits 0
+           result-idx 0]
+      (if (= i n)
+        (do
+          (when (not (zero? num-filled-bits))
+            (let [last-byte-val (byte (ubyte (bit-shift-left b (- 8 num-filled-bits))))]
+              (aset result result-idx last-byte-val)))
+          result)
+        ;; else
+        (let [new-bit (if (dot (aget x-vals i) y) 1 0)
+              new-b (+ (bit-shift-left b 1) new-bit)]
+          (if (= num-filled-bits 7)
+            (let [byte-val (byte (ubyte new-b))]
+              (aset result result-idx byte-val)
+              (recur (inc i) 0 0 (inc result-idx)))
+            (recur (inc i) new-b (inc num-filled-bits) result-idx)))))))
+
+(defn compute-rows [^long size]
+  (let [two-over-size (/ 2.0 size)
+        x-offset -1.5
+        y-offset -1.0
+        x-vals (double-array size (map #(index-to-val % two-over-size x-offset)
+                                       (range size)))
+        y-vals (double-array size (map #(index-to-val % two-over-size y-offset)
+                                       (range size)))]
+    (pmap #(compute-row x-vals (aget y-vals %))
+         (range size))))
+
+
+(defn do-mandelbrot [^long size]
+  (let [rows (compute-rows size)]
+    (printf "P4\n")
+    (printf "%d %d\n" size size)
+    (flush)
+    (let [ostream (BufferedOutputStream. System/out)]
+      (doseq [r rows]
+        (. ostream write r 0 (count r)))
+      (. ostream close))
+    (flush)))
+
+
+(defn -main [& args]
+  (let [size (. Long parseLong (nth args 0) 10)]
+    (do-mandelbrot size)
+    (shutdown-agents)))
