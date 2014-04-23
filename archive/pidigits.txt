@@ -1,0 +1,27 @@
+site
+
+
+real	0m3.756s
+
+--------------------------------
+1 - fold compose_r and compose_l into digits, add prim hints
+
+time java -server -XX:+TieredCompilation -XX:+AggressiveOpts -Djava.library.path=include -cp target/classes:/home/alex/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar pidigits 10000 > so
+
+real	0m3.820s
+
+--------------------------------
+2 - 1 + switch from vector to object array for GI
+real	0m3.781s
+
+--------------------------------
+3 - 2 + define IGmpInteger and remove all reflective calls
+real	0m3.190s
+
+--------------------------------
+4 - 3 + got rid of GI array and better output buffer
+real	0m3.045s
+
+--------------------------------
+--------------------------------
+
