@@ -1,0 +1,33 @@
+--------------------
+*CURRENT BEST JAVA*
+
+javac src/baseline/java/alioth/java/spectralnorm.java
+time java -server -cp src/baseline/java -XX:+TieredCompilation -XX:+AggressiveOpts alioth.java.spectralnorm 5500
+
+real	0m1.425s
+user	0m9.989s
+sys	0m0.037s
+
+--------------------
+*CURRENT BEST CLOJURE*
+
+$ time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar -server -XX:+TieredCompilation -XX:+AggressiveOpts -Xmx8m alioth.spectral_norm_site 5500
+
+real	0m2.387s
+user	0m13.075s
+sys	0m0.115s
+
+--------------------
+.1 - current best + modernization / simplification
+real	0m2.351s
+
+--------------------
+.2 - rewrite of Java #2
+real	0m2.257s
+
+.3 - experimental mods to cache partial calculation of "a"
+doesn't seem worth it based on timings
+
+--------------------
+.4 - .2 plus fixed bug causing wrong answers in a calc
+submitted
