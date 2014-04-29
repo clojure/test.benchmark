@@ -1,0 +1,58 @@
+--------------------
+*CURRENT BEST JAVA*
+
+javac src/baseline/java/alioth/java/nbody.java
+time java -server -cp src/baseline/java -XX:+TieredCompilation -XX:+AggressiveOpts alioth.java.nbody 50000000
+
+-0.169075164
+-0.169059907
+
+real	0m6.338s
+user	0m6.342s
+sys	0m0.028s
+
+--------------------
+*CURRENT BEST CLOJURE*
+(on site)
+
+time java -server -cp target/classes:/Users/alex/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar -server -XX:+TieredCompilation -XX:+AggressiveOpts -Xmx8m alioth.nbody_site 50000000
+
+-0.169075164
+-0.169059907
+
+real	0m8.168s
+user	0m9.338s
+sys	0m0.089s
+
+--------------------
+*SCALA VERSION*
+(Using Java 8 now)
+
+Compile:
+/Users/alex/code/tools/scala-2.10.3/bin/scalac -optimise -target:jvm-1.7 src/baseline/scala/nbody.scala
+
+Run:
+time env JAVA_OPTS=-Xmx3G java -server -XX:+TieredCompilation -XX:+AggressiveOpts -Xbootclasspath/a:/Users/alex/code/tools/scala-2.10.3/lib/scala-library.jar:/Users/alex/code/tools/scala-2.10.3/lib/akka-actors.jar:/Users/alex/code/tools/scala-2.10.3/lib/typesafe-config.jar nbody 50000000
+
+-0.169075164
+-0.169059907
+
+real	0m7.093s
+user	0m7.111s
+sys	0m0.035s
+
+--------------------
+0 - site version
+
+--------------------
+1 - ported Java version
+
+real	0m7.971s
+user	0m9.166s
+sys	0m0.103s
+
+
+--------------------
+2 - 1 + use local ints for array indices
+
+real	0m7.728s
